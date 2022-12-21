@@ -19,11 +19,20 @@ my ( $training, $termux );
 # Создаем объект тренировок
 $training = Training->new;
 
+sub handler { $training->set_option(@_) }
+
+GetOptions (
+    'repeats=i' => \&handler,
+    'pause=s' => \&handler,
+    'relax=s' => \&handler,
+);
+
+$training->show_options;
 ## ОБРАБОТКА ВНЕШНИХ КЛЮЧЕЙ КС
 
 # Если мы в Termux и звук включен
 if ( $ENV{HOME} =~ /\/data.+/ &&
-         $training->get_option( 'sound' ) eq 'enable' ) {
+         $training->get_option( 'sound' ) == 1 ) {
     
     # Создаем объект и включаем звук
     $termux = Termux->new;
@@ -32,9 +41,6 @@ if ( $ENV{HOME} =~ /\/data.+/ &&
     $SIG{INT} = \$termux->restore;
 }
 
-$training->add( grep -r $_, @ARGV );
-$training->prepare;
-$training->show_exercises;
 
 
 

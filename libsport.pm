@@ -14,7 +14,7 @@ use open qw / :std :utf8 /;
         repeats => '3',
         pause => '10s',
         relax => '30s',
-        sound => 'disable',
+        sound => 0,
     );
 
     # Конструктор возвращает ссылку на объект класса Training
