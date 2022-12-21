@@ -17,37 +17,23 @@ use open qw / :std :utf8 /;
         sound => 'disable',
     );
 
-    sub new { 
-        # Конструктор возвращает ссылку на объект класса Training
-        bless \%data, $_[0] 
-    }
+    # Конструктор возвращает ссылку на объект класса Training
+    sub new { bless \%data, $_[0] }
 
+    # Устанавливает параметру $_[1] значение $_[2]
+    sub set_option { $data{$_[1]} = $_[2] }
 
-    sub set_option {
-        # Устанавливает параметру $_[1] значение $_[2]
-        $data{$_[1]} = $_[2]
-    }
+    # Получаем значение конкретной опции
+    sub get_option { $data{$_[1]} }
 
+    # Выводит внутренние данные объекта
+    sub show_options { print "$_=", $_[0]->get_option($_), "\n" foreach ( keys %data ) }
 
-    sub get_option {
-        # Получаем значение конкретной опции
-        $data{$_[1]}
-    }
-
-  sub get_options {
-        # Выводит внутренние данные объекта
-        print "$_=", $_[0]->get_option($_), "\n" foreach ( keys %data ) 
-    }
-
+    # Создает ссылку на массив со всеми упражненими
     sub add {
-        # Избавляемся от имени объекта в первом аргументе
         shift;
-
-        # Хеш для хранения ссылок на содержимое файлов. 
-        # Ключи - имена файлов
         my @files;
         
-        # Читаем каждый файл в массив и записываем ссылку на него в хеш
         foreach ( @_ ) {
             open my $fh, '<', $_ or die "$!";
             chomp ( my @file = <$fh> );
@@ -56,10 +42,13 @@ use open qw / :std :utf8 /;
         $data{list} = \@files
     } 
 
+    # Расширяет массив с упражнениями таким образом, чтобы учитывались количество подхходов, паузы между упражнениями и подходами
     sub prepare {
-        # Избавляемся от имени класса в первом аргументе
         my @final;
-        for ( my $file_index= 0; $file_index <= $#{$data{list}}; $file_index++ ) { 
+        for ( 
+            my $file_index = 0;
+            $file_index <= $#{$data{list}}; 
+            $file_index++ ) { 
             
             my @file = @{$data{list}[$file_index]};
 
@@ -75,27 +64,27 @@ use open qw / :std :utf8 /;
                 }
                 push @final, "Time to relax : " . $_[0]->get_option('relax')  unless $repeat == $data{repeats};
             }    
+            push @final, "End of program"
         }
         $data{list} = \@final
     }
 
+    # Выводит список упражнений как в изначальном виде, так и в подготовленном
     sub show_exercises { 
-        # Для каждой ссылки на файл с упражнениями
-        foreach ( @{$data{list}} ) {
-            if ( ref $_ ) {
-            # Для каждого упражнения из файла
-                foreach ( @$_ ) {
-                    my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
-                    print "$name : $duration\n";
-                }
-            }
-            else {
-                #chomp;
+            my $view = sub { 
+            foreach ( @_ ) {
                 my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
-                print "$name : $duration";
+                return "$name : $duration"
             }
+        };
+
+        foreach ( @{$data{list}} ) {
+                    (ref $_)  ? 
+                    print $view->(@$_):
+                    print $view->($_);
+                    print "\n";
+        }
         } 
-    }
     
 # Конец области видимости пакета Training
 }
