@@ -16,14 +16,8 @@ our $version = '0.0.1';
 ## ДОПОЛНИТЕЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ВНЕШНИХ КЛЮЧЕЙ
 my ( $training, $termux );
 
-# Файл настроек
-my $stored_options = "$ENV{HOME}/.simple-sport";
-
 # Создаем объект тренировок
 $training = Training->new;
-
-# Получаем настройки из файла с настройками
-$training->set_stored_options( $stored_options );
 
 ## ОБРАБОТКА ВНЕШНИХ КЛЮЧЕЙ КС
 
@@ -38,15 +32,9 @@ if ( $ENV{HOME} =~ /\/data.+/ &&
     $SIG{INT} = \$termux->restore;
 }
 
-unless ( -e $stored_options ) {
-    # Если файла с настройками нет в домашней директории
-    # то создает его и сохраняет туда значения по умолчанию
-    $training->store_options( $stored_options );
-}
-
-
 $training->add( grep -r $_, @ARGV );
 $training->prepare;
+$training->show_exercises;
 
 
 

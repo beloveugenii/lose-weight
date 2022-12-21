@@ -13,8 +13,7 @@ use open qw / :std :utf8 /;
         list => '', 
         repeats => '3',
         pause => '10s',
-        relax => '1m',
-        between_repeats => '30s',
+        relax => '30s',
         sound => 'disable',
     );
 
@@ -29,21 +28,6 @@ use open qw / :std :utf8 /;
         $data{$_[1]} = $_[2]
     }
 
-    sub set_stored_options {
-        # Устанавливает параметры, прочитанные из файла
-        open my $fh, '<', $_[1] or die;
-        while ( <$fh> ) {
-            chomp;
-            # Параметры должны быть разделены символом '=' 
-            $_[0]->set_option( split /\s*=\s*/ )
-        }
-    }
-
-    sub store_options {
-        # Сохраняет параметры в файле
-        open my $fh, '>', $_[1] or die;
-        print $fh "$_=", $_[0]->get_option($_), "\n" foreach ( keys %data )
-    }
 
     sub get_option {
         # Получаем значение конкретной опции
@@ -61,35 +45,58 @@ use open qw / :std :utf8 /;
 
         # Хеш для хранения ссылок на содержимое файлов. 
         # Ключи - имена файлов
-        my %files;
+        my @files;
         
         # Читаем каждый файл в массив и записываем ссылку на него в хеш
         foreach ( @_ ) {
             open my $fh, '<', $_ or die "$!";
             chomp ( my @file = <$fh> );
-            $files{$_} = \@file;
+            push @files, \@file; 
         }
-        $data{list} = \%files
+        $data{list} = \@files
     } 
 
     sub prepare {
         # Избавляемся от имени класса в первом аргументе
-        shift;
+        my @final;
+        for ( my $file_index= 0; $file_index <= $#{$data{list}}; $file_index++ ) { 
+            
+            my @file = @{$data{list}[$file_index]};
 
+            for ( my $repeat = 1; $repeat <= $data{repeats}; $repeat++ ) {
+
+                push @final, "Prepare : " . $_[0]->get_option('pause') if $repeat == 1;
+
+                
+                for( my $ex = 0; $ex <= $#file; $ex++) {
+                    push @final, "Pause : " . $_[0]->get_option('pause') unless $ex == 0;
+                    push @final, $file[$ex];
+
+                }
+                push @final, "Time to relax : " . $_[0]->get_option('relax')  unless $repeat == $data{repeats};
+            }    
+        }
+        $data{list} = \@final
     }
 
     sub show_exercises { 
         # Для каждой ссылки на файл с упражнениями
-        foreach my $file ( keys %{$data{list}} ) {
+        foreach ( @{$data{list}} ) {
+            if ( ref $_ ) {
             # Для каждого упражнения из файла
-            print "Файл $file\n";
-            foreach ( @{$data{list}{$file}} ) {
+                foreach ( @$_ ) {
                     my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
                     print "$name : $duration\n";
-            }  
-            print "\n"
+                }
+            }
+            else {
+                #chomp;
+                my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
+                print "$name : $duration";
+            }
         } 
     }
+    
 # Конец области видимости пакета Training
 }
 
