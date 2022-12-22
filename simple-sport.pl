@@ -10,24 +10,22 @@ use Time::HiRes qw / time sleep /;
 use Getopt::Long qw / GetOptions /;
 
 require "./libsport.pm";
+require "./t_sound.pm";
+
 
 our $version = '0.0.2';
 
-my ( $training );
-
 # Создаем объект тренировок
-$training = Training->new;
+my $training = Training->new;
 
 # Обработчики для внешних опций
 sub handler { $training->set_option( @_ ) }
 sub sound { 
-    $training->set_option( 'sound', 1 );
-
     # Если мы в Termux и звук включен
     if ( $ENV{HOME} =~ /\/data.+/ ) {
         # Создаем объект и включаем звук
-        my $termux = Termux->new;
-        $termux->store;
+        my $termux = T_sound->new;
+        $termux->enable;
         # Устанавливаем обработчик прерывания
         $SIG{INT} = \$termux->restore
     }
@@ -38,6 +36,7 @@ GetOptions (
     'pause=s' => \&handler,
     'relax=s' => \&handler,
     'sound' => \&sound,
+    'v|version' => sub { print "$version\n" },
 );
 
 
@@ -50,17 +49,21 @@ $training->show_exercises;
 
 =encoding utf8
 
-=head1 NAME Simple-sport - simple sport assistant
-Z<>
+=head1 NAME 
 
-=head1 SYNOPSIS Usage: simple-sport [OPTIONS] [FILE]
-Z<>
+    Simple-sport - simple sport assistant
 
-=head1 DESCRIPTION This program will help you to do sport everytime and everythere)
-Z<>
+=head1 SYNOPSIS
+
+    Usage: simple-sport [OPTIONS] [FILE]
+
+=head1 DESCRIPTION 
+
+    This program will help you to do sport everytime and everythere)
 
 =head1 TODO
-Z<>
+
+
 
 =cut
 
