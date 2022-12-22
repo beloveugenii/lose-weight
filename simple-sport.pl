@@ -13,14 +13,25 @@ require "./libsport.pm";
 
 our $version = '0.0.2';
 
-## ДОПОЛНИТЕЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ВНЕШНИХ КЛЮЧЕЙ
-my ( $training, $termux );
+my ( $training );
 
 # Создаем объект тренировок
 $training = Training->new;
 
+# Обработчики для внешних опций
 sub handler { $training->set_option( @_ ) }
-sub sound { $training->set_option( 'sound', 1 ) }
+sub sound { 
+    $training->set_option( 'sound', 1 );
+
+    # Если мы в Termux и звук включен
+    if ( $ENV{HOME} =~ /\/data.+/ ) {
+        # Создаем объект и включаем звук
+        my $termux = Termux->new;
+        $termux->store;
+        # Устанавливаем обработчик прерывания
+        $SIG{INT} = \$termux->restore
+    }
+}
 
 GetOptions (
     'repeats=i' => \&handler,
@@ -29,19 +40,6 @@ GetOptions (
     'sound' => \&sound,
 );
 
-
-$training->show_options;
-die;
-# Если мы в Termux и звук включен
-if ( $ENV{HOME} =~ /\/data.+/ &&
-         $training->get_option( 'sound' ) == 1 ) {
-    
-    # Создаем объект и включаем звук
-    $termux = Termux->new;
-    $termux->store;
-    # Устанавливаем обработчик прерывания
-    $SIG{INT} = \$termux->restore;
-}
 
 $training->add(grep -e $_, @ARGV);
 $training->prepare;
