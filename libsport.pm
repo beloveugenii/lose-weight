@@ -41,37 +41,10 @@ use open qw / :std :utf8 /;
         }
         $data{list} = \@files
     } 
-
-    # Расширяет массив с упражнениями таким образом, чтобы учитывались количество подхходов, паузы между упражнениями и подходами
-    sub prepare {
-        my @final;
-        for ( 
-            my $file_index = 0;
-            $file_index <= $#{$data{list}}; 
-            $file_index++ ) { 
-            
-            my @file = @{$data{list}[$file_index]};
-
-            for ( my $repeat = 1; $repeat <= $data{repeats}; $repeat++ ) {
-
-                push @final, "Prepare : " . $_[0]->get_option('pause') if $repeat == 1;
-
-                
-                for( my $ex = 0; $ex <= $#file; $ex++) {
-                    push @final, "Pause : " . $_[0]->get_option('pause') unless $ex == 0;
-                    push @final, $file[$ex];
-
-                }
-                push @final, "Time to relax : " . $_[0]->get_option('relax')  unless $repeat == $data{repeats};
-            }    
-            push @final, ""
-        }
-        $data{list} = \@final
-    }
-
+    
     # Выводит список упражнений как в изначальном виде, так и в подготовленном
     sub show_exercises { 
-            my $view = sub { 
+        my $view = sub { 
             foreach ( @_ ) {
                 my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
                 return "$name:$duration"
@@ -79,15 +52,55 @@ use open qw / :std :utf8 /;
         };
 
         foreach ( @{$data{list}} ) {
-                    (ref $_)  ? 
-                    print $view->(@$_):
-                    print $view->($_);
-                    print "\n";
+            (ref $_)  ? print $view->(@$_): print $view->($_);
+            print "\n";
         }
-        } 
-    
+    } 
+
+    # Расширяет массив с упражнениями таким образом, чтобы учитывались количество подходов, паузы между упражнениями и подходами
+    sub prepare {
+        # Константные строки
+        my $prepare_str = "Приговься : " . $_[0]->get_option('pause');
+        my $pause_str = "Пауза : " . $_[0]->get_option('pause');
+        my $relax_str = "Время отдохнуть : " . $_[0]->get_option('relax');
+        
+        # Подфункция, преобразующая время в секунды
+        # Возвращает строку, где первое значени - название, 
+        # второе - время, приведенное в секунды
+        my $conv = sub {
+            my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/, $_[0];
+            my ( $num, $mod ) = $duration =~ /(\d+)(.+)/;
+            $num *= ( $mod eq 'm' ) ? 60 : 1;
+            return "$name : $num"
+        };
+
+        my @final;
+
+        for ( my $f_index = 0; $f_index <= $#{$data{list}}; $f_index++ ) { 
+            my @file = @{$data{list}[$f_index]};
+
+            for ( my $repeat = 1; $repeat <= $data{repeats}; $repeat++ ) {
+                push @final, $conv->( $prepare_str ) if $repeat == 1;
+
+                for( my $ex = 0; $ex <= $#file; $ex++) {
+                    push @final, $conv->( $pause_str ) 
+                        unless $ex == 0;
+                    push @final, $conv->( $file[$ex] );
+                }
+                push @final, $conv->( $relax_str ) 
+                    unless $repeat == $data{repeats};
+            }    
+            push @final, ""
+        }
+        # Перезаписываем в хеш под ключом 'list' ссылку на новый список
+        # который включает все упражнения в нужно количестве, разделенные паузами
+        # Перерывы между файлами определяются стркой ':'
+        $data{list} = \@final
+    }
+   
 # Конец области видимости пакета Training
 }
+
 
 
 {

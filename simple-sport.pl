@@ -11,7 +11,7 @@ use Getopt::Long qw / GetOptions /;
 
 require "./libsport.pm";
 
-our $version = '0.0.1';
+our $version = '0.0.2';
 
 ## ДОПОЛНИТЕЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ВНЕШНИХ КЛЮЧЕЙ
 my ( $training, $termux );
@@ -19,17 +19,19 @@ my ( $training, $termux );
 # Создаем объект тренировок
 $training = Training->new;
 
-sub handler { $training->set_option(@_) }
+sub handler { $training->set_option( @_ ) }
+sub sound { $training->set_option( 'sound', 1 ) }
 
 GetOptions (
     'repeats=i' => \&handler,
     'pause=s' => \&handler,
     'relax=s' => \&handler,
+    'sound' => \&sound,
 );
 
-$training->show_options;
-## ОБРАБОТКА ВНЕШНИХ КЛЮЧЕЙ КС
 
+$training->show_options;
+die;
 # Если мы в Termux и звук включен
 if ( $ENV{HOME} =~ /\/data.+/ &&
          $training->get_option( 'sound' ) == 1 ) {
@@ -40,8 +42,6 @@ if ( $ENV{HOME} =~ /\/data.+/ &&
     # Устанавливаем обработчик прерывания
     $SIG{INT} = \$termux->restore;
 }
-
-
 
 $training->add(grep -e $_, @ARGV);
 $training->prepare;
