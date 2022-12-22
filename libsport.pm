@@ -64,7 +64,7 @@ use open qw / :std :utf8 /;
                 }
                 push @final, "Time to relax : " . $_[0]->get_option('relax')  unless $repeat == $data{repeats};
             }    
-            push @final, "End of program"
+            push @final, ""
         }
         $data{list} = \@final
     }
@@ -74,7 +74,7 @@ use open qw / :std :utf8 /;
             my $view = sub { 
             foreach ( @_ ) {
                 my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
-                return "$name : $duration"
+                return "$name:$duration"
             }
         };
 

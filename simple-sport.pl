@@ -43,6 +43,9 @@ if ( $ENV{HOME} =~ /\/data.+/ &&
 
 
 
+$training->add(grep -e $_, @ARGV);
+$training->prepare;
+$training->show_exercises;
 
 
 # POD
