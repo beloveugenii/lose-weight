@@ -1,15 +1,17 @@
 
-# Simple-sport
+## Name
 
-## Description: 
+ Simple-sport  
+
+## Description 
 
 Simple sport assistant. This program will help you to do sport everytime and everythere)  
 
-## Usage:  
+## Usage  
 
 simple-sport [OPTIONS] [FILE]  
 
-## Options:   
+## Options  
 
 '--sound' enables sound in Termux  
 '--repeats NUM' set repeats NUM  
