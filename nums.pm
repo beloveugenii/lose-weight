@@ -3,10 +3,9 @@
 use strict;
 use utf8;
 use open qw / :std :utf8 /;
-
 use Term::ReadKey; 
 
-my $term_size = (Term::ReadKey::GetTerminalSize)[0];
+our $term_size = (Term::ReadKey::GetTerminalSize)[0];
 
 our %nums = ( 
     0 => { 1=>"#########", 2=>"#########", 3=>"###   ###", 4=>"###   ###", 5=>"###   ###", 6=>"###   ###", 7=>"#########", 8=>"#########", },
@@ -32,12 +31,12 @@ sub print_big_nums {
     };
 
     my $f = int ( ($term_size - 27 ) / 4 );
-    print $f, "\n";
     my ( $l, $c, $r ) = $get_digits->($_[0]);
-    foreach ( 1..8 ) {
-        printf "%s%9s%s%9s%s%9s%s\n", " " x $f, $nums{$l}{$_}," " x $f,$nums{$c}->{$_}, " " x $f, $nums{$r}->{$_}, " " x $f;
-    }
+        printf "%s%9s%s%9s%s%9s%s\n",
+            " " x $f, $nums{$l}{$_},
+            " " x $f,$nums{$c}->{$_}, 
+            " " x $f, $nums{$r}->{$_}, 
+            " " x $f foreach ( 1..8 );
     1
 }
-
-print_big_nums(818);
+1;

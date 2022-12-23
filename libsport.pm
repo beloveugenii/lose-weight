@@ -25,6 +25,9 @@ use open qw / :std :utf8 /;
     # Получаем значение конкретной опции
     sub get_option { $data{$_[1]} }
 
+    # Возвращает массив с упражнениями
+    sub do { @{$data{list}} }
+
     # Выводит внутренние данные объекта
     sub show_options { print "$_=", $_[0]->get_option($_), "\n" foreach ( keys %data ) }
 
@@ -52,14 +55,13 @@ use open qw / :std :utf8 /;
         my $view = sub { 
             foreach ( @_ ) {
                 my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
-                return "$name:$duration"
+                return "$name: $duration"
             }
         };
-
-        foreach ( @{$data{list}} ) {
-            (ref $_)  ? print $view->(@$_): print $view->($_);
-            print "\n";
-        }
+        
+        ( ref $_ ) ? print $view->(@$_), "\n" : 
+                     print $view->($_), "\n" 
+                        foreach ( @{$data{list}} );
     } 
 
     # Расширяет массив с упражнениями таким образом, чтобы учитывались количество подходов, паузы между упражнениями и подходами
@@ -100,9 +102,10 @@ use open qw / :std :utf8 /;
         # Перезаписываем в хеш под ключом 'list' ссылку на новый список
         # который включает все упражнения в нужно количестве, разделенные паузами
         # Перерывы между файлами определяются стркой ':'
-        $data{list} = \@final
+         $data{list} = \@final
     }
-   
+
+
 # Конец области видимости пакета Training
 }
 

@@ -6,13 +6,16 @@ use strict;
 use warnings;
 use utf8;
 use open qw / :std :utf8 /;
+
 use Time::HiRes qw / time sleep /;
 use Getopt::Long qw / GetOptions /;
+
 use subs qw / prepare_termux /;
 
 require "./libsport.pm";
+require "./nums.pm";
 
-my $version = '0.0.2';
+my $version = '0.0.3';
 
 # Создаем объект тренировок
 my $training = Training->new;
@@ -41,8 +44,20 @@ GetOptions (
 
 $training->add(grep -e $_, @ARGV);
 $training->prepare;
-$training->show_exercises;
-<STDIN>;
+
+my @ex = $training->do;
+for (my $i = $#ex; $i >= 0; $i-- ) {
+
+
+}
+foreach ($training->do) {
+    my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
+    for ( my $i = $duration; $i >= 0; $i-- ) {
+        system 'clear';
+        print_big_nums($i);
+        sleep 1;
+    }
+}
 
 &$sound_off;
 
