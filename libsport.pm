@@ -76,7 +76,7 @@ use open qw / :std :utf8 /;
         # второе - время, приведенное в секунды
         my $conv = sub {
             my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/, $_[0];
-            my ( $num, $mod ) = $duration =~ /(\d+)(.+)/;
+            my ( $num, $mod ) = $duration =~ /(\d+(?:\.\d)*)([ms]*)/;
             $num *= ( $mod eq 'm' ) ? 60 : 1;
             return "$name : $num"
         };
