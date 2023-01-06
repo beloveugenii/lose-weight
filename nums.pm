@@ -29,11 +29,13 @@ sub welcome {
     my $f = int ( $term_size - $l ) / 2;
     printf "%s%s%s\n", ' ' x $f, $str, ' ' x $f;
     printf "%s\n", '-' x $term_size;
-
+    print "\n" x 4;
     $str = 'Программа тренировки:';
     $l = length($str);
     $f = int ( $term_size - $l ) / 5;
     printf "%s%s\n", ' ' x $f, $_ foreach ( $str, @{$_[0]} );
+    print "\n" x 4;
+    printf "%s\n", '-' x $term_size;
 }
 
 sub print_big_nums {

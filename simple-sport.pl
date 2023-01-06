@@ -15,7 +15,7 @@ use subs qw / prepare_termux mysplit /;
 require "./libsport.pm";
 require "./nums.pm";
 
-my $version = '0.0.4';
+my $version = '0.0.5';
 
 # Создаем объект тренировок
 my $training = Training->new;
@@ -29,7 +29,7 @@ my ( $sound_on, $sound_off ) = prepare_termux;
 # Если мы находимся в среде Termux
 if ( $ENV{HOME} =~ /\/data.+/ ) {
     # Включаем звук
-    &$sound_on;   
+    &$sound_on if $training->get_option('sound');   
     # Устанавливаем обработчик прерывания
     $SIG{INT} = $sound_off
 }
@@ -69,7 +69,10 @@ for ( my $n = 0; $n <= $#ex; $n++ ) {
             for ( my $t = $c_dur; $t >= 0; $t-- ) {
                 system 'clear';
                 print "Текущее упражнение: $c_name $c_dur\n";
+                print "\n" x 6;
                 print_big_nums( $t );
+                print "\n" x 6;
+                print "\a" if $t <= 2;
                 print "Следующее упражнение: $n_name $n_dur\n";
                 sleep 1;
             }
@@ -113,6 +116,7 @@ sub prepare_termux {
         sub {
             rename $backup, $termux if -e $backup;
             system 'termux-reload-settings';
+            system 'clear';
             exit 0
         }
 }
