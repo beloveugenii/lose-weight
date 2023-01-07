@@ -84,9 +84,14 @@ use open qw / :std :utf8 /;
         my @final;
 
         for ( my $f_index = 0; $f_index <= $#{$data{list}}; $f_index++ ) { 
+            # Разыменовываем как список элемент массива и сохраняем его в переменную
             my @file = @{$data{list}[$f_index]};
 
-            for ( my $repeat = 1; $repeat <= $data{repeats}; $repeat++ ) {
+            # Переменная local_repeats используется для того, чтобы разминка и заминка
+            # повторялись только 1 раз
+            my $local_repeats = ( $f_index == 0 || $f_index == $#{$data{list}} ) ? 1 : $_[0]->get_option('repeats');
+
+            for ( my $repeat = 1; $repeat <= $local_repeats; $repeat++ ) {
                 push @final, $conv->( $prepare_str ) if $repeat == 1;
 
                 for( my $ex = 0; $ex <= $#file; $ex++) {
@@ -95,7 +100,7 @@ use open qw / :std :utf8 /;
                     push @final, $conv->( $file[$ex] );
                 }
                 push @final, $conv->( $relax_str ) 
-                    unless $repeat == $data{repeats};
+                    unless $repeat == $local_repeats;
             }    
             push @final, ""
         }

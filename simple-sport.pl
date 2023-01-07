@@ -15,6 +15,9 @@ use subs qw / prepare_termux mysplit /;
 require "./libsport.pm";
 require "./nums.pm";
 
+# Prepared exercises blocks
+my ( $prepare_f, $ending_f ) = qw ( tr/prepare tr/ending );
+
 my $version = '0.0.5';
 
 # Создаем объект тренировок
@@ -39,11 +42,15 @@ GetOptions (
     'pause=s' => \&handler,
     'relax=s' => \&handler,
     'sound' => $sound_on,
-    'v|version' => sub { print "$version\n" },
+    'h|help' => sub { system "perldoc $0"; exit 0 }, 
+    'v|version' => sub { print "$version\n"; exit 0 },
 );
 
 my @files = grep -e $_, @ARGV;
-die "Usage:\n./simple-sport.pl [options] [files]\n" unless @files;
+
+# Разминка и заминка добавляются по умолчанию
+unshift @files, $prepare_f if -e $prepare_f;
+push @files, $ending_f if -e $ending_f;
 
 $training->add(@files);
 $training->prepare;
@@ -63,7 +70,7 @@ for ( my $n = 0; $n <= $#ex; $n++ ) {
         # следующего упражнений
         my ( $c_name, $c_dur ) = mysplit( $ex[$n] );
         my ( $n_name, $n_dur ) = ( $ex[$n + 1] ) ? 
-            mysplit( $ex[$n + 1] ) : ('Конец тренировки','');
+            mysplit( $ex[$n + 1] ) : ('Конец блока','');
         
             # Цикл выполнения самого упражнения
             for ( my $t = $c_dur; $t >= 0; $t-- ) {
@@ -81,8 +88,8 @@ for ( my $n = 0; $n <= $#ex; $n++ ) {
     else {
         # ПОКАЗАТЬ СТАТИСТИКУ
             last if $n == $#ex;
-<STDIN>;
-
+            print "Нажатие клавиши для перехода к следующему блоку";
+            <STDIN>;
     }
 }
 &$sound_off;
@@ -126,21 +133,55 @@ sub prepare_termux {
 
 =encoding utf8
 
-=head1 NAME 
+=head3 NAME 
 
-    Simple-sport - simple sport assistant
+    Simple sport - very minimalistic sport assistant 
 
-=head1 SYNOPSIS
+=head3 SYNOPSIS
 
     Usage: simple-sport [OPTIONS] [FILE]
 
-=head1 DESCRIPTION 
+=head3 DESCRIPTION 
 
-    This program will help you to do sport everytime and everythere)
+    This program will help you to do sport everytime and everythere: the program reads the files transferred to it and makes a list of exercises from them. The duration of pauses between exercises and repetitions, as well as the number of repetitions can be passed to the program as options (see below).
 
-=head1 TODO
+    If no exercise files are transferred to the program, then warm-up and hitch files will be automatically started.  
 
+=head3 OPTIONS
 
+=over
 
-=cut
+=item help
+
+show this help  
+
+=item version 
+
+show version of app  
+
+=item sound 
+
+enables sound in Termux  
+
+=item repeats NUM
+
+set repeats NUM  
+
+=item pause VALUE
+
+set pause between exerises at VALUE  
+
+=item relax VALUE
+
+set relax duration at VALUE  
+
+=item You can set VALUE like 15s for 15 secons, or 15m for 15 minutes  
+
+=back
+
+=head3 FILE FORMAT
+
+    The exercise file must be formatted in a certain way. It should contain lines like "exercise"->"duration". 
+    The colon symbol ":" can also act as a separator. The margins don't matter.
+    The duration of each exercise can be specified as a number or a number with a suffix. For example: "15m" and "40s".
 
