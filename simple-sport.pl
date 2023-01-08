@@ -79,7 +79,7 @@ for ( my $n = 0; $n <= $#ex; $n++ ) {
                 print "\n" x 6;
                 print_big_nums( $t );
                 print "\n" x 6;
-                print "\a" if $t <= 2;
+                print "\a" if ( $t < 2 || $t == int ( $c_dur / 2 ) );
                 print "Следующее упражнение: $n_name $n_dur\n";
                 sleep 1;
             }
