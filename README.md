@@ -1,7 +1,11 @@
 
+## About project
+
+At this moment the development of this program is stopped
+
 ### Name
 
-Simple-sport - very minimalistic sport assistant   
+Simple-sport - minimalistic console sport assistant   
 
 ### Synopsis  
 
@@ -21,6 +25,8 @@ If no exercise files are transferred to the program, then warm-up and hitch file
 - 'repeats NUM' set repeats NUM  
 - 'pause VALUE' set pause between exerises at VALUE  
 - 'relax VALUE' set relax duration at VALUE  
+- 'prepare' add preparing in the beginning of the trainig
+- 'ending' add ending in the end of training
 
 You can set VALUE like 15s for 15 secons, or 15m for 15 minutes  
 

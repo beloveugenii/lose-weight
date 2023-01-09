@@ -18,7 +18,7 @@ require "./nums.pm";
 # Prepared exercises blocks
 my ( $prepare_f, $ending_f ) = qw ( tr/prepare tr/ending );
 
-my $version = '0.0.5';
+my $version = '0.0.6';
 
 # Создаем объект тренировок
 my $training = Training->new;
@@ -37,20 +37,37 @@ if ( $ENV{HOME} =~ /\/data.+/ ) {
     $SIG{INT} = $sound_off
 }
 
+# Переменные для включения разминки и заминки
+# в программу
+my ( $prepare, $ending );
+
 GetOptions (
+    'prepare' => \$prepare,
+    'ending' => \$ending,
     'repeats=i' => \&handler,
     'pause=s' => \&handler,
     'relax=s' => \&handler,
     'sound' => $sound_on,
-    'h|help' => sub { system "perldoc $0"; exit 0 }, 
-    'v|version' => sub { print "$version\n"; exit 0 },
+    'h|help' => sub { 
+                    system "perldoc $0"; 
+                    exit 0 
+                }, 
+    'v|version' => sub { 
+                    print "$version\n"; 
+                    exit 0 
+                },
 );
 
+# Разминка и заминка добавляются при включении
+# соответствующих опций
+unshift @ARGV, $prepare_f if $prepare;
+push @ARGV, $ending_f if $ending;
+
+# Удаляем несуществующие файлы
 my @files = grep -e $_, @ARGV;
 
-# Разминка и заминка добавляются по умолчанию
-unshift @files, $prepare_f if -e $prepare_f;
-push @files, $ending_f if -e $ending_f;
+# Обработчик холостого запуска
+die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" unless @files;
 
 $training->add(@files);
 $training->prepare;
@@ -75,6 +92,7 @@ for ( my $n = 0; $n <= $#ex; $n++ ) {
             # Цикл выполнения самого упражнения
             for ( my $t = $c_dur; $t >= 0; $t-- ) {
                 system 'clear';
+                print "\n" x 2;
                 print "Текущее упражнение: $c_name $c_dur\n";
                 print "\n" x 6;
                 print_big_nums( $t );
@@ -135,7 +153,7 @@ sub prepare_termux {
 
 =head3 NAME 
 
-    Simple sport - very minimalistic sport assistant 
+    Simple sport - minimalistic console  sport assistant 
 
 =head3 SYNOPSIS
 
@@ -174,6 +192,14 @@ set pause between exerises at VALUE
 =item relax VALUE
 
 set relax duration at VALUE  
+
+=item prepare
+
+add preparing in the beginning of the trainig
+
+=item ending
+
+add ending in the end of training
 
 =item You can set VALUE like 15s for 15 secons, or 15m for 15 minutes  
 
