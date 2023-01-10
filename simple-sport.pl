@@ -18,7 +18,7 @@ require "./nums.pm";
 # Prepared exercises blocks
 my ( $prepare_f, $ending_f ) = qw ( tr/prepare tr/ending );
 
-my $version = '0.0.6';
+my $version = '0.0.7';
 
 # Создаем объект тренировок
 my $training = Training->new;
@@ -74,34 +74,42 @@ $training->prepare;
 
 # Показываем стартовый экран, с программой упражнений и всеми данными
 welcome( \@files );
+
 #ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
 chomp ( my $entered = <STDIN> ); 
 exit 0 if $entered eq 'q';
-
 my @ex = $training->do;
+
+# Выключаем отображение курсора
+print "\033[?25l";
 
 for ( my $n = 0; $n <= $#ex; $n++ ) {
     # Если есть упражнение в этом индексе
     if ( $ex[$n] ) {
-        # Получаем название и продолжительность текущего и
-        # следующего упражнений
+        # Очищаем экран между упражнениями
+        print "\033[2J\033[H";
+        
+        # Получаем название и продолжительность текущего и следующего упражнений
         my ( $c_name, $c_dur ) = mysplit( $ex[$n] );
         my ( $n_name, $n_dur ) = ( $ex[$n + 1] ) ? 
             mysplit( $ex[$n + 1] ) : ('Конец блока','');
         
-            # Цикл выполнения самого упражнения
-            for ( my $t = $c_dur; $t >= 0; $t-- ) {
-                system 'clear';
-                print "\n" x 2;
-                print "Текущее упражнение: $c_name $c_dur\n";
-                print "\n" x 6;
-                print_big_nums( $t );
-                print "\n" x 6;
-                print "\a" if ( $t < 2 || $t == int ( $c_dur / 2 ) );
-                print "Следующее упражнение: $n_name $n_dur\n";
-                sleep 1;
-            }
-            sleep 0.25;
+        # Выводим названия упражнений и их продолжительность
+        print "\n" x 2 . "Текущее упражнение: $c_name $c_dur\n" . 
+              "\n" x 6 . "\033[s" . 
+              "\n" x 14 . "Следующее упражнение: $n_name $n_dur\n";
+               
+        # Цикл выполнения самого упражнения
+        for ( my $t = $c_dur; $t >= 0; $t-- ) {
+            # Звуковой сигнал
+            print "\a" if ( $t < 2 || $t == int ( $c_dur / 2 ) );
+            # Перемещаем курсор в положение для печати цифр        
+            print "\033[u";
+            print_big_nums( $t );
+            sleep 1;
+        }
+        # Небольшая пауза между упражнениями
+        sleep 0.25;
     }
     else {
         # ПОКАЗАТЬ СТАТИСТИКУ
@@ -110,6 +118,8 @@ for ( my $n = 0; $n <= $#ex; $n++ ) {
             <STDIN>;
     }
 }
+# Включаем отображение курсора в конце выполнения программы
+print "\033[?25h";
 &$sound_off;
 
 
@@ -142,6 +152,7 @@ sub prepare_termux {
             rename $backup, $termux if -e $backup;
             system 'termux-reload-settings';
             system 'clear';
+            print "\033[?25h";
             exit 0
         }
 }
