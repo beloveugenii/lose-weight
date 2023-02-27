@@ -7,11 +7,13 @@ use strict;
 use utf8;
 use open qw / :std :utf8 /;
 
+use File::Basename qw / dirname /;
 use Time::HiRes qw / time sleep /;
 use Getopt::Long qw / GetOptions /;
 
 use subs qw / prepare_termux mysplit /;
 
+chdir dirname $0;
 require "./libsport.pm";
 require "./nums.pm";
 
