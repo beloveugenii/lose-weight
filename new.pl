@@ -2,25 +2,39 @@
 
 use strict;
 use feature 'say';
+use utf8;
+use open qw / :std :utf8 /;
+use lib qw ( home/eugeniibelov/Документы/my_learning/Perl/src/ );
+require "../screen.pm";
+my $screen = Screen->new;
 
-sub parse_files {
-    my @files = @_;
-    my %parsed_files;
-
-    foreach my $file ( @files ) {
-
-        # Validator
+my @reserved_words = qw / name repeats pause relax on_end aref /;
+sub check_list {
+    my @arr = @_;
+    my @return_arr;
+    foreach my $file ( @arr ){
         if ( my $warn_code = ( ! -e $file ) ? -1 : ! (  $file =~ /\.ss$/ ) ? -2 : undef ) {
         
             my $warn_msg = ( $warn_code == -1 ) ? "'$file' not exist" :
                            ( $warn_code == -2 ) ? "'$file' is unsupported" :
                                                     'Unknown warning';
-
             open my $log, ">>", 'log';
             say $log $warn_msg;
             close $log;
             next
         }
+        push @return_arr, $file
+    }
+    @return_arr
+}
+
+
+
+sub parse_files {
+    my @files = @_;
+    my @parsed_files;
+
+    foreach my $file ( @files ) {
 
         open my $fh, "<", $file or die "'$file': $!";
         my %file;
@@ -37,7 +51,6 @@ sub parse_files {
     
         # Parser
         while ( my $line = <$fh> ) {
-            my @reserved_words = qw / name pause repeats relax on_end /;
             chomp $line;
             next if $line =~ /(?:^#+)|(?:^$)/;
 
@@ -47,20 +60,32 @@ sub parse_files {
                 $file{$1} = $2 : 
                 push @{$file{aref}}, [ split /:|(?:->)/, $line ];
         }
-        $parsed_files{$file} = \%file
+        push @parsed_files, \%file
     }
 
        
-    \%parsed_files
-    #%parsed_files = (
-        #file1 => href1,
-        #file2 => href2,
+    \@parsed_files
+    #@parsed_files = (
+        #href1,
+        #href2,
     #);
 }
 
-my $href = parse_files(@ARGV);
 
-use Data::Dumper;
+my $str = sub {
+    my $out_str;
+    foreach my $href ( @{$_[0]} ) {
+        my $name = ( $href->{name} =~ /^['"](.+)['"]$/ ) ? $1 : $href->{name};
+        my $duration;
+        $duration += $_->[1] foreach @{$href->{aref}};
+        $out_str .= "$name: " . int ( $duration / 60 ) . 'm ' . $duration % 60 . "s\n";
+    }
+    $out_str
+};
 
-print Dumper $href;
+my $aref = parse_files( check_list( @ARGV ) );
 
+
+$screen->header('Simple-sport');
+$screen->message(undef,$str->($aref));
+$screen->menu( qw / start quit /);
