@@ -1,40 +1,25 @@
 #!/usr/bin/perl
 
 use strict;
+use FindBin qw / $Bin /;
 use feature 'say';
 use utf8;
 use open qw / :std :utf8 /;
-use lib qw ( home/eugeniibelov/Документы/my_learning/Perl/src/ );
-require "../screen.pm";
+use lib "$Bin";
+require "$Bin/../screen.pm";
+require "$Bin/libss.pm";
 my $screen = Screen->new;
 
 my @reserved_words = qw / name repeats pause relax on_end aref /;
-sub check_list {
-    my @arr = @_;
-    my @return_arr;
-    foreach my $file ( @arr ){
-        if ( my $warn_code = ( ! -e $file ) ? -1 : ! (  $file =~ /\.ss$/ ) ? -2 : undef ) {
-        
-            my $warn_msg = ( $warn_code == -1 ) ? "'$file' not exist" :
-                           ( $warn_code == -2 ) ? "'$file' is unsupported" :
-                                                    'Unknown warning';
-            open my $log, ">>", 'log';
-            say $log $warn_msg;
-            close $log;
-            next
-        }
-        push @return_arr, $file
-    }
-    @return_arr
-}
 
 
 
 sub parse_files {
-    my @files = @_;
+
+    my $files_ref = shift;
     my @parsed_files;
 
-    foreach my $file ( @files ) {
+    foreach my $file ( @$files_ref ) {
 
         open my $fh, "<", $file or die "'$file': $!";
         my %file;
@@ -57,8 +42,14 @@ sub parse_files {
             $line =~ /^(.+)(?::|(?:->))(.+)$/;
 
             ( grep { $1 eq $_} @reserved_words ) ? 
-                $file{$1} = $2 : 
-                push @{$file{aref}}, [ split /:|(?:->)/, $line ];
+            ###!!!!!!!!!!!!1
+            #
+            #    КАК ОТЛИЧАЕТСЯ СТРОКА С ПАРАМЕТРОМ И СТРОКА С УПРАЖНЕНИЕМ?????
+            #
+            ##
+                    $file{$1} = to_sec($2) :
+                    push @{$file{aref}}, [ $1, to_sec($2) ];
+            
         }
         push @parsed_files, \%file
     }
@@ -83,9 +74,12 @@ my $str = sub {
     $out_str
 };
 
-my $aref = parse_files( check_list( @ARGV ) );
+my $aref = parse_files (check_list( \@ARGV )) ;
 
 
-$screen->header('Simple-sport');
-$screen->message(undef,$str->($aref));
-$screen->menu( qw / start quit /);
+for my $key ( keys %{$aref->[0]} ) {
+
+say "$key = $aref->[0]{$key}";
+
+}
+
