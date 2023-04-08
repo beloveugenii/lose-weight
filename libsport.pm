@@ -5,113 +5,118 @@ use utf8;
 use open qw / :std :utf8 /;
 
 {
-    # Начало области видимости пакета Training
+    ## Начало области видимости пакета Training
     package Training;
     
-    # Данные каждого экземпляра класса
-    my %data = ( 
-        list => '', 
-        repeats => '3',
-        pause => '10s',
-        relax => '60s',
-    );
-
-    # Конструктор возвращает ссылку на объект класса Training
-    sub new { bless \%data, $_[0] }
-
-    # Устанавливает параметру $_[1] значение $_[2]
-    sub set_option { $data{$_[1]} = $_[2] }
-
-    # Получаем значение конкретной опции
-    sub get_option { $data{$_[1]} }
-
-    # Возвращает массив с упражнениями
-    sub do { @{$data{list}} }
-
-    # Выводит внутренние данные объекта
-    sub show_options { print "$_=", $_[0]->get_option($_), "\n" foreach ( keys %data ) }
-
-    # Создает ссылку на массив со всеми упражненими
-    sub add {
-        # Избавляемся от аргумента - имени класса
-        shift;
-        my @files;
-        
-        foreach ( @_ ) {
-            open my $fh, '<', $_ or die "$!";
-            my @file;
-            foreach ( <$fh> ) {
-                chomp;
-                next if /^#\s*|^\s*$/;
-                push @file, $_;
-            }
-            push @files, \@file; 
-        }
-        $data{list} = \@files
-    } 
+    # Преобразует переданное значение в секунды
+    sub to_sec { ( $_[1] =~ /([\d.]+)\s?[mM]$/ ) ? return $1 * 60 : ( $_[1] =~ /([\d.]+)[sS]?$/ ) ? return $1 : undef }
     
-    # Выводит список упражнений как в изначальном виде, так и в подготовленном
-    sub show_exercises { 
-        my $view = sub { 
-            foreach ( @_ ) {
-                my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/;
-                return "$name: $duration"
-            }
-        };
-        
-        ( ref $_ ) ? print $view->(@$_), "\n" : 
-                     print $view->($_), "\n" 
-                        foreach ( @{$data{list}} );
-    } 
+    ## Для переданного индекса в массиве(1) получаем значение переданной опции(2)
+    sub get_option { $_[0]->[$_[1]]->{$_[2]} }
 
-    # Расширяет массив с упражнениями таким образом, чтобы учитывались количество подходов, паузы между упражнениями и подходами
-    sub prepare {
-        # Константные строки
-        my $prepare_str = "Приговься : " . $_[0]->get_option('pause');
-        my $pause_str = "Пауза : " . $_[0]->get_option('pause');
-        my $relax_str = "Время отдохнуть : " . $_[0]->get_option('relax');
-        
-        # Подфункция, преобразующая время в секунды
-        # Возвращает строку, где первое значени - название, 
-        # второе - время, приведенное в секунды
-        my $conv = sub {
-            my ( $name, $duration ) = split /\s*:\s*|\s*(?:->)\s*/, $_[0];
-            my ( $num, $mod ) = $duration =~ /(\d+(?:\.\d)*)([ms]*)/;
-            $num *= ( $mod eq 'm' ) ? 60 : 1;
-            return "$name : $num"
-        };
+    # Конструктор экземпляра класса получает ссылку на список файлов
+    # Возвращает ссылку на объект-массив
+    sub new {  
+        my ( $class, $files_ref ) = @_;
+    
+        # Массив с разобранными файлами
+        #my %parsed_files;
+        my @parsed_files;
 
-        my @final;
-
-        for ( my $f_index = 0; $f_index <= $#{$data{list}}; $f_index++ ) { 
-            # Разыменовываем как список элемент массива и сохраняем его в переменную
-            my @file = @{$data{list}[$f_index]};
-
-            # Переменная local_repeats используется для того, чтобы разминка и заминка
-            # повторялись только 1 раз
-            my $local_repeats = ( $f_index == 0 || $f_index == $#{$data{list}} ) ? 1 : $_[0]->get_option('repeats');
-
-            for ( my $repeat = 1; $repeat <= $local_repeats; $repeat++ ) {
-                push @final, $conv->( $prepare_str ) if $repeat == 1;
-
-                for( my $ex = 0; $ex <= $#file; $ex++) {
-                    push @final, $conv->( $pause_str ) 
-                        unless $ex == 0;
-                    push @final, $conv->( $file[$ex] );
+        # Для каждого файла из переданных
+        foreach my $file ( @$files_ref ) {
+            # Открываем файл для чтения
+            open my $fh, "<", $file or die "'$file': $!";
+            my %file;
+            # Структура данных на каждого файл
+            # %file = (
+                # param1 => str, 
+                # param2 => str, 
+                # paramN => str, 
+                # data=> [
+                    # [ ex1, dur1, ], 
+                    # [ ex2, dur2, ],
+                    # [ exN, durN, ],
+                # ],
+            # );
+    
+            # Parser
+            while ( <$fh> ) {
+                # читаем файл построчно
+                chomp;
+                # пропускаем строку, если она пуста, или это комментарий
+                next if /(?:^#+)|(?:^$)/;
+            
+                # Если разделитель двоеточие или ->, то это упражнение, а вторая часть - время
+                if ( /^(.+)(?::|(?:->))(.+)$/ ) {
+                    # Перевести последнюю часть в секунды и вставить как анонимный массив в хеш
+                    push @{$file{data}}, [ $1, $class->to_sec($2) ]
                 }
-                push @final, $conv->( $relax_str ) 
-                    unless $repeat == $local_repeats;
-            }    
-            push @final, ""
+                # Если разделитель символ равно, то это параметр
+                elsif ( /^(.+)=(.+)$/) {
+                    my ( $name, $val ) = ( $1, $2 );
+                    $file{$name} = $val =~ /^([\d.]+[smM])$/ ? $class->to_sec($1) : $val;
+                }
+            }
+            # вносит ссылку на хеш с данными из файла в список разобранных файлов 
+            #$parsed_files{$file} = \%file
+             push @parsed_files, \%file
         }
-        # Перезаписываем в хеш под ключом 'list' ссылку на новый список
-        # который включает все упражнения в нужно количестве, разделенные паузами
-        # Перерывы между файлами определяются стркой ':'
-         $data{list} = \@final
+        # Создаем экземпляр класса и возвращаем ссылку на него
+        #bless \%parsed_files, $class
+        bless \@parsed_files, $class
     }
 
+    sub prepare {
+        my $class = shift;
+        my $aref = shift;
 
-# Конец области видимости пакета Training
+
+        ДОБАВИТЬ ПАУЗЫ МЕЖДУ УПРАЖНЕНИЯМИ И ПОДХОДАМИ
+    
+    
+    
+    
+    }
+
+    ## Конец области видимости пакета Training
 }
+   ## Расширяет массив с упражнениями таким образом, чтобы учитывались количество подходов, паузы между упражнениями и подходами
+    #sub prepare {
+        ## Константные строки
+        #my $prepare_str = "Приговься : " . $_[0]->get_option('pause');
+        #my $pause_str = "Пауза : " . $_[0]->get_option('pause');
+        #my $relax_str = "Время отдохнуть : " . $_[0]->get_option('relax');
+        
+        #my @final;
+
+        #for ( my $f_index = 0; $f_index <= $#{$data{list}}; $f_index++ ) { 
+            ## Разыменовываем как список элемент массива и сохраняем его в переменную
+            #my @file = @{$data{list}[$f_index]};
+
+            ## Переменная local_repeats используется для того, чтобы разминка и заминка
+            ## повторялись только 1 раз
+            #my $local_repeats = ( $f_index == 0 || $f_index == $#{$data{list}} ) ? 1 : $_[0]->get_option('repeats');
+
+            #for ( my $repeat = 1; $repeat <= $local_repeats; $repeat++ ) {
+                #push @final, $conv->( $prepare_str ) if $repeat == 1;
+
+                #for( my $ex = 0; $ex <= $#file; $ex++) {
+                    #push @final, $conv->( $pause_str ) 
+                        #unless $ex == 0;
+                    #push @final, $conv->( $file[$ex] );
+                #}
+                #push @final, $conv->( $relax_str ) 
+                    #unless $repeat == $local_repeats;
+            #}    
+            #push @final, ""
+        #}
+        ## Перезаписываем в хеш под ключом 'list' ссылку на новый список
+        ## который включает все упражнения в нужно количестве, разделенные паузами
+        ## Перерывы между файлами определяются стркой ':'
+         #$data{list} = \@final
+    #}
+
+
 
 1;

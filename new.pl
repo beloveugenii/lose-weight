@@ -12,7 +12,6 @@ require "$Bin/libss.pm";
 
 my $aref = parse_files (check_list( \@ARGV )) ;
 
-
 foreach my $training ( @$aref ) {
     # Для каждого элемента из массива с файлами упражнений
     my ($pause, $relax, $repeats, $name) = ( $training->{pause}, $training->{relax}, $training->{repeats}, $training->{name});
