@@ -20,7 +20,6 @@ use open qw / :std :utf8 /;
         my ( $class, $files_ref ) = @_;
     
         # Массив с разобранными файлами
-        #my %parsed_files;
         my @parsed_files;
 
         # Для каждого файла из переданных
@@ -59,64 +58,41 @@ use open qw / :std :utf8 /;
                 }
             }
             # вносит ссылку на хеш с данными из файла в список разобранных файлов 
-            #$parsed_files{$file} = \%file
-             push @parsed_files, \%file
+            push @parsed_files, \%file
         }
         # Создаем экземпляр класса и возвращаем ссылку на него
-        #bless \%parsed_files, $class
         bless \@parsed_files, $class
     }
 
+    # Метод получает имя файла с упражнениями и номер текущего подхода
+    # Возвращает ссылку на массив со всеми внесенными перерывами
     sub prepare {
-        my $class = shift;
-        my $aref = shift;
+        my ( $class, $file, $repeat ) = ( shift, shift, shift );
+        my $list = $class->get_option($file, 'data');
+        my $repeats = $class->get_option($file, 'repeats');
+        my @r_list = ();
+    
+        foreach ( @$list ) {
+            # Перед каждым упражнением вне зависимости от подхода вставляется пауза
+            push @r_list, ['Пауза', $class->get_option($file, 'pause')];
+            push @r_list, $_
+        }
+        
+        # Первая пауза удаляется, так-как она не всегда нужна
+        shift @r_list;
+        
+        # При первом повторе вставляется пауза для того чтобы приготовиться
+        unshift @r_list,['Приготовьтесь', $class->get_option($file, 'pause')] if ( $repeat == 1 );
 
-
-        ДОБАВИТЬ ПАУЗЫ МЕЖДУ УПРАЖНЕНИЯМИ И ПОДХОДАМИ
-    
-    
-    
-    
+        # В конец списка вставляется более длительная пауза
+        ( $repeat == $repeats ) ? 
+            push @r_list, ['Конец тренировки', $class->get_option($file, 'on_end')] : 
+            push @r_list, ['Время отдохнуть', $class->get_option($file, 'relax')];
+        
+        \@r_list
     }
 
     ## Конец области видимости пакета Training
 }
-   ## Расширяет массив с упражнениями таким образом, чтобы учитывались количество подходов, паузы между упражнениями и подходами
-    #sub prepare {
-        ## Константные строки
-        #my $prepare_str = "Приговься : " . $_[0]->get_option('pause');
-        #my $pause_str = "Пауза : " . $_[0]->get_option('pause');
-        #my $relax_str = "Время отдохнуть : " . $_[0]->get_option('relax');
-        
-        #my @final;
-
-        #for ( my $f_index = 0; $f_index <= $#{$data{list}}; $f_index++ ) { 
-            ## Разыменовываем как список элемент массива и сохраняем его в переменную
-            #my @file = @{$data{list}[$f_index]};
-
-            ## Переменная local_repeats используется для того, чтобы разминка и заминка
-            ## повторялись только 1 раз
-            #my $local_repeats = ( $f_index == 0 || $f_index == $#{$data{list}} ) ? 1 : $_[0]->get_option('repeats');
-
-            #for ( my $repeat = 1; $repeat <= $local_repeats; $repeat++ ) {
-                #push @final, $conv->( $prepare_str ) if $repeat == 1;
-
-                #for( my $ex = 0; $ex <= $#file; $ex++) {
-                    #push @final, $conv->( $pause_str ) 
-                        #unless $ex == 0;
-                    #push @final, $conv->( $file[$ex] );
-                #}
-                #push @final, $conv->( $relax_str ) 
-                    #unless $repeat == $local_repeats;
-            #}    
-            #push @final, ""
-        #}
-        ## Перезаписываем в хеш под ключом 'list' ссылку на новый список
-        ## который включает все упражнения в нужно количестве, разделенные паузами
-        ## Перерывы между файлами определяются стркой ':'
-         #$data{list} = \@final
-    #}
-
-
 
 1;

@@ -19,19 +19,14 @@ If no exercise files are transferred to the program, then warm-up and hitch file
 
 ### Options  
 
-- 'help' show this help  
-- 'version' show version of app  
-- 'sound' enables sound in Termux  
-- 'repeats NUM' set repeats NUM  
-- 'pause VALUE' set pause between exerises at VALUE  
-- 'relax VALUE' set relax duration at VALUE  
-- 'prepare' add preparing in the beginning of the trainig
-- 'ending' add ending in the end of training
-
-You can set VALUE like 15s for 15 secons, or 15m for 15 minutes  
+TODO
 
 ### File format
 
-The exercise file must be formatted in a certain way. It should contain lines like "exercise"->"duration".  
-The colon symbol ":" can also act as a separator. The margins don't matter.  
-The duration of each exercise can be specified as a number or a number with a suffix. For example: "15m" and "40s".  
+In the new version, the exercise file contains all the necessary information to build a workout plan: the number of repetitions, time intervals and the set of exercises itself. 
+
+The execution time must be specified with a time modifier (s or m), the separator for the exercise is either a colon symbol or a small arrow ( -> ).
+
+The same principle is used to set parameters, but the separator is the equality symbol ( = ). If the parameter is set by a simple number, like the number of approaches, then the time modifier cannot be set. Parameters used: name, pause, relax, repiats, on\_end.
+
+The grid symbol ( # ) is used to create comments.
