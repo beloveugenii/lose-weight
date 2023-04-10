@@ -3,9 +3,9 @@
 # Здесь должен будет идти блок с параметрами
 name='Заминка'
 pause=5s
-repeats:1
-relax:0s
-on_end:0s
+repeats=1
+relax=0s
+on_end=0s
 
 Поза ребенка->30
 Кобра:30

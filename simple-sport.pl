@@ -24,8 +24,8 @@ require "$Bin/../screen.pm";
 
 
 # Ссылки на функции для изменения состояния среды Termux
-#my ( $sound_on, $sound_off ) = prepare_termux();
-#$SIG{INT} = $sound_off;
+my ( $sound_on, $sound_off ) = prepare_termux();
+$SIG{INT} = $sound_off;
 
 
 ## Если мы находимся в среде Termux
@@ -104,7 +104,7 @@ foreach my $file( 0..$#files ) {
 # Включаем отображение курсора в конце выполнения программы
 print "\033[?25h";
  
-#&$sound_off;
+&$sound_off;
 
 
 # Функция возвращает две анонимные фукнции.Одна включает в Termux звук. Другая возращает среду в исходное состояние
