@@ -1,24 +1,42 @@
 #!/usr/bin/perl
 
-# Simple-sport.pl
-
 use strict;
 use utf8;
 use open qw / :std :utf8 /;
 
+our $NAME = 'simple-sport.pl';
+our $VERSION = '0.1.0';
+
 use FindBin qw / $Bin /;
 use Time::HiRes qw / time sleep /;
+
 use Getopt::Std;
+#
+# Ключи для аргументов КС
+our ( $opt_h, $opt_v, $opt_s );
+
+# Обработчики аргументов КС
+sub help { system "perldoc $NAME"; exit 0 }
+sub version { die "$NAME\n$VERSION\n"; exit 0 }
+sub enable_sound{}
+sub empty_start { die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" }
+
 
 use lib "$Bin";
 require 'libsport.pm';
-require 'nums.pm';
-require "$Bin/../screen.pm";
+require "screen.pm";
 
 
-#my $VERSION = '0.1.0';
-#print "$VERSION\n";
-#sub EMPTY_START_MESSAGE { die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" unless @{$_[0]} }
+
+# Проверяем параметры КС и обрабатываем их
+getopts('vhs');
+help() if $opt_h;
+version() if $opt_v;
+enable_sound() if $opt_s;
+
+# Удаляем несуществующие файлы, и проверяем что хоть какие-то файлы остались
+@ARGV = grep -e, @ARGV;
+empty_start() unless  @ARGV;
 
 
 
@@ -38,18 +56,14 @@ $SIG{INT} = $sound_off;
 
 
 
-# Удаляем несуществующие файлы, и проверяем что хоть какие-то файлы остались
-my @files = grep -e, @ARGV;
-@ARGV = ();
-
 
 ## Показываем стартовый экран, с программой упражнений и всеми данными
-#welcome( \@files );
+Screen->header('Simple sport', \@ARGV );
 
 
 ##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
-#chomp ( my $entered = <STDIN> ); 
-#exit 0 if $entered eq 'q';
+chomp ( my $entered = <STDIN> ); 
+exit 0 if $entered eq 'q';
 
 
 
@@ -59,14 +73,14 @@ my @files = grep -e, @ARGV;
 
 
 # Создаем объект тренировок куда передаем ссылку на массив с файлами
-my $t = Training->new( \@files );
+my $t = Training->new( \@ARGV );
 
 ## Выключаем отображение курсора
 print "\033[?25l";
 print "\033[2J\033[H";
 
 # Для каждого из файлов
-foreach my $file( 0..$#files ) {
+foreach my $file ( 0..$#ARGV ) {
     # Получаем имя программы упражнений, количество повторов, продолжительность пауз
     my $name = $t->get_option($file, 'name');
     my $repeats = $t->get_option($file, 'repeats');
@@ -80,7 +94,7 @@ foreach my $file( 0..$#files ) {
         # Для каждого упражнения
         for ( my $index = 0; $index <= $#$list; $index++ )  {
             # Выводим названия упражнений и их продолжительность
-            Screen->header("$name $repeat / $repeats");
+            Screen->header( "$name $repeat / $repeats" );
         
             my ( $ex, $duration ) = (@{$list->[$index]});
 
@@ -90,7 +104,7 @@ foreach my $file( 0..$#files ) {
             for (my $timer = $duration; $timer >= 0; $timer--, sleep 1 ) {
                 # Перемещаем курсор в положение для печати цифр и выводим их
                 print "\033[u";
-                print_big_nums( $timer );
+                Screen->print_big_nums( $timer );
                 # Звуковой сигнал
                 print "\a" if ( $timer < 2 || $timer == int ( $duration / 2 ) );
             }
@@ -139,32 +153,44 @@ sub prepare_termux {
 
 =encoding utf8
 
-=head3 NAME 
+=head3 Name
 
-    Simple sport - minimalistic console  sport assistant 
+Simple-sport - minimalistic console sport assistant
 
-=head3 SYNOPSIS
+=head3 Synopsis
 
-    Usage: simple-sport [OPTIONS] [FILE]
+Usage: simple-sport [OPTIONS] [FILE]
 
-=head3 DESCRIPTION 
+=head3 Description
 
-    This program will help you to do sport everytime and everythere: the program reads the files transferred to it and makes a list of exercises from them. The duration of pauses between exercises and repetitions, as well as the number of repetitions can be passed to the program as options (see below).
+This program will help you to do sport everytime and everythere: the program reads the files transferred to it and makes a list of exercises from them. The duration of pauses between exercises and repetitions, as well as the number of repetitions can be passed to the program as options (see below).
 
-    If no exercise files are transferred to the program, then warm-up and hitch files will be automatically started.  
+=head3 Options
 
-=head3 OPTIONS
+    -s enables a sound alarm when executinag
+    -v show version of app
+    -h show embedded help
 
+=head3 File format
 
-    TODO 
+In the new version, the exercise file contains all the necessary data to build a workout plan: the number of repeats, time intervals and the set of exercises itself.
 
+The grid symbol ( # ) is used to create comments, empty lines will skip.
 
-=head3 FILE FORMAT
+The execution time must be specified with a time modifier (s or m), the separator for the exercises is either a colon symbol ( : ) or a small arrow ( -E<gt> ).
 
-    In the new version, the exercise file contains all the necessary information to build a workout plan: the number of repetitions, time intervals and the set of exercises itself. 
+The same principle is used to set parameters, but the separator is the equality symbol ( = ). If the parameter is set by a simple number, like the number of approaches, then the time modifier cannot be set.
 
-    The execution time must be specified with a time modifier (s or m), the separator for the exercise is either a colon symbol or a small arrow ( -> ).
+=head3 Example
 
-    The same principle is used to set parameters, but the separator is the equality symbol ( = ). If the parameter is set by a simple number, like the number of approaches, then the time modifier cannot be set. Parameters used: name, pause, relax, repiats, on_end.
+    name='Warm-up'
+    pause=5s
+    relax=0s
+    repiats=1
+    on\_end=10s
 
-    The grid symbol ( # ) is used to create comments.
+    ex1:30s
+    ex2->0.5m
+    ex3->40s
+    ex5:1m
+
