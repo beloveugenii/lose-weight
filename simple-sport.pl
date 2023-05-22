@@ -27,18 +27,16 @@ require 'libsport.pm';
 require "screen.pm";
 
 
-
 # Проверяем параметры КС и обрабатываем их
 getopts('vhs');
 help() if $opt_h;
 version() if $opt_v;
 enable_sound() if $opt_s;
 
+
 # Удаляем несуществующие файлы, и проверяем что хоть какие-то файлы остались
-@ARGV = grep -e, @ARGV;
-empty_start() unless  @ARGV;
-
-
+@ARGV = grep -e, map $_ = $Bin . "/$_", @ARGV;
+empty_start() unless @ARGV;
 
 
 # Ссылки на функции для изменения состояния среды Termux
@@ -57,13 +55,6 @@ $SIG{INT} = $sound_off;
 
 
 
-## Показываем стартовый экран, с программой упражнений и всеми данными
-Screen->header('Simple sport', \@ARGV );
-
-
-##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
-chomp ( my $entered = <STDIN> ); 
-exit 0 if $entered eq 'q';
 
 
 
@@ -74,6 +65,14 @@ exit 0 if $entered eq 'q';
 
 # Создаем объект тренировок куда передаем ссылку на массив с файлами
 my $t = Training->new( \@ARGV );
+## Показываем стартовый экран, с программой упражнений и всеми данными
+Screen->header('Simple sport', \@ARGV);
+
+
+##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
+chomp ( my $entered = <STDIN> ); 
+exit 0 if $entered eq 'q';
+
 
 ## Выключаем отображение курсора
 print "\033[?25l";
