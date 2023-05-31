@@ -27,7 +27,7 @@ use open qw / :std :utf8 /;
             # Открываем файл для чтения
             open my $fh, "<", $file or die "'$file': $!";
             my %file;
-            # Структура данных на каждого файл
+            # Структура данных каждого файл
             # %file = (
                 # param1 => str, 
                 # param2 => str, 

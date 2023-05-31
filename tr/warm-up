@@ -1,6 +1,6 @@
 # Разминка
 
-name='Разминка'
+name=Разминка
 pause=5s
 repeats=1
 relax=0s

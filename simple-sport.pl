@@ -39,8 +39,6 @@ enable_sound() if $opt_s;
 empty_start() unless  @ARGV;
 
 
-
-
 # Ссылки на функции для изменения состояния среды Termux
 my ( $sound_on, $sound_off ) = prepare_termux();
 $SIG{INT} = $sound_off;
@@ -57,39 +55,34 @@ $SIG{INT} = $sound_off;
 
 
 
+
+# Создаем объект тренировок куда передаем ссылку на массив с файлами
+my $t = Training->new( \@ARGV );
+
 ## Показываем стартовый экран, с программой упражнений и всеми данными
-Screen->header('Simple sport', \@ARGV );
+Screen->header('Simple sport', [ grep {$_ = $t->get_option($_, 'name')} 0..$#ARGV ] );
+
 
 
 ##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
 chomp ( my $entered = <STDIN> ); 
 exit 0 if $entered eq 'q';
 
-
-
-
-
-
-
-
-# Создаем объект тренировок куда передаем ссылку на массив с файлами
-my $t = Training->new( \@ARGV );
-
 ## Выключаем отображение курсора
 print "\033[?25l";
-print "\033[2J\033[H";
+Screen->clear;
 
 # Для каждого из файлов
-foreach my $file ( 0..$#ARGV ) {
+foreach my $file_index ( 0..$#ARGV ) {
     # Получаем имя программы упражнений, количество повторов, продолжительность пауз
-    my $name = $t->get_option($file, 'name');
-    my $repeats = $t->get_option($file, 'repeats');
+    my $name = $t->get_option($file_index, 'name');
+    my $repeats = $t->get_option($file_index, 'repeats');
 
     # Для каждого повтора
     for (my $repeat = 1; $repeat <= $repeats; $repeat++ ) {
     
         # Получаем список упражнений со всеми паузами
-        my $list = $t->prepare($file, $repeat);
+        my $list = $t->prepare($file_index, $repeat);
 
         # Для каждого упражнения
         for ( my $index = 0; $index <= $#$list; $index++ )  {
@@ -109,7 +102,7 @@ foreach my $file ( 0..$#ARGV ) {
                 print "\a" if ( $timer < 2 || $timer == int ( $duration / 2 ) );
             }
             # Очищаем экран между упражнениями
-            print "\033[2J\033[H";
+            Screen->clear;
             sleep 0.25;
         }
     }

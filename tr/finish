@@ -1,11 +1,11 @@
 # Заминка
 
 # Здесь должен будет идти блок с параметрами
-name='Заминка'
+name=Заминка
 pause=5s
-repeats:1
-relax:0s
-on_end:0s
+repeats=1
+relax=0s
+on_end=0s
 
 Поза ребенка->30s
 Кобра:30s
