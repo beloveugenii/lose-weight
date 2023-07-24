@@ -1,0 +1,10 @@
+
+name='тест'
+pause=2s
+relax=5s
+repeats=3
+on_end=10s
+
+ex1:5s
+ex2:3s
+ex3:4s
