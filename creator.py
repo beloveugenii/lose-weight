@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
+from  os import get_terminal_size
 
+width = get_terminal_size()[0]
+
+def header(text):
+    if len(text) % 2 == 1:
+        text = ' ' + text
+    l = len(text)
+    f = (width - l) // 2
+    print('-' * width + '\n' + ' ' * f + text + ' ' * f + '\n' + '-' * width)
+
+def clear():
+    print("\033[2J\033[H")
+
+header('hello world')
+header('helloworld')
+clear()
+header('Мастер создания тренировки')
 # приветствие 
 # действие выход или прерывание
 
