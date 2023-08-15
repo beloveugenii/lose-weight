@@ -11,14 +11,13 @@ use FindBin qw / $Bin /;
 use Time::HiRes qw / time sleep /;
 
 use Getopt::Std;
-#
+
 # Ключи для аргументов КС
 our ( $opt_h, $opt_v, $opt_s );
 
 # Обработчики аргументов КС
 sub help { system "perldoc $NAME"; exit 0 }
 sub version { die "$NAME\n$VERSION\n"; exit 0 }
-sub enable_sound{}
 sub empty_start { die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" }
 
 
@@ -31,8 +30,6 @@ require "screen.pm";
 getopts('vhs');
 help() if $opt_h;
 version() if $opt_v;
-enable_sound() if $opt_s;
-
 
 # Удаляем несуществующие файлы, и проверяем что хоть какие-то файлы остались
 @ARGV = grep -e, @ARGV;
@@ -40,16 +37,14 @@ empty_start() unless @ARGV;
 
 # Ссылки на функции для изменения состояния среды Termux
 my ( $sound_on, $sound_off ) = prepare_termux();
+# Устанавливаем обработчик прерывания
 $SIG{INT} = $sound_off;
 
-
-## Если мы находимся в среде Termux
-#if ( $ENV{HOME} =~ /\/data.+/ ) {
+# Если мы находимся в среде Termux
+if ( $ENV{HOME} =~ /\/data.+/ && $opt_s) {
     # Включаем звук
-    #&$sound_on;   
-    # Устанавливаем обработчик прерывания
-    #$SIG{INT} = $sound_off
-#}
+    &$sound_on;   
+}
 
 # Создаем объект тренировок куда передаем ссылку на массив с файлами
 my $t = Training->new( \@ARGV );
@@ -93,9 +88,9 @@ foreach my $file_index ( 0..$#ARGV ) {
             for (my $timer = $duration; $timer >= 0; $timer--, sleep 1 ) {
                 # Перемещаем курсор в положение для печати цифр и выводим их
                 print "\033[u";
-                Screen->print_big_nums( $timer );
                 # Звуковой сигнал
-                print "\a" if ( $timer < 2 || $timer == int ( $duration / 2 ) );
+                print "\a" if ( $timer < 3 || $timer == int ( $duration / 2 ) );
+                Screen->print_big_nums( $timer );
             }
             # Очищаем экран между упражнениями
             Screen->clear;
@@ -109,9 +104,9 @@ print "\033[?25h";
  
 &$sound_off;
 
-
-# Функция возвращает две анонимные фукнции.Одна включает в Termux звук. Другая возращает среду в исходное состояние
 sub prepare_termux {
+    # Функция возвращает две анонимные фукнции.
+    # Одна включает в Termux звук. Другая возращает среду в исходное состояние
     my $termux = "$ENV{HOME}/.termux/termux.properties";
     my $backup = $termux . '.bak';
     return 
@@ -136,6 +131,7 @@ sub prepare_termux {
             exit 0
         }
 }
+
 
 
 # POD
