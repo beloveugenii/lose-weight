@@ -25,7 +25,6 @@ use lib "$Bin";
 require 'libsport.pm';
 require "screen.pm";
 
-
 # Проверяем параметры КС и обрабатываем их
 getopts('vhs');
 help() if $opt_h;
