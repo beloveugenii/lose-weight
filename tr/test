@@ -1,8 +1,8 @@
 name='тест'
-pause=1s
-relax=1s
+pause=2s
+relax=2s
 repeats=2
-on_end=5s
+on_end=2s
 
 ex1:2s
 ex2:2s

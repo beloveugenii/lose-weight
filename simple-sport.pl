@@ -31,9 +31,9 @@ sub timer {
     use Encode;
     my $ex = decode( 'utf8', shift );
     
-    print "\e[?25l";
+    print "\033[?25l";
     
-    for ( my $timer = 0, $SIG{INT} = sub { print "\e[?25h\n"; exit 0 };; $timer ++ ) {
+    for ( my $timer = 0, $SIG{INT} = sub { print "\033[?25h\n"; exit 0 };; $timer ++ ) {
         Screen->clear();
         Screen->header( 'Таймер' );
         print "\nТекущее упражнение: $ex\n" . "\n" x 6 . "\033[s" . "\n" x 12 . "\n\033[u"; 
@@ -77,7 +77,13 @@ if ( $in_termux && $opt_s ) {
     $SIG{INT} = sub {
         rename $backup, $termux if -e $backup;
         system 'termux-reload-settings';
-        print "\e[2J\e[H\e[?25h\n";
+        print "\033[2J\033[H\033[?25h\n";
+        exit 0
+    };
+}
+else {
+    $SIG{INT} = sub { 
+        print "\033[2J\033[H\033[?25h\n";
         exit 0
     };
 }
@@ -99,7 +105,7 @@ exit 0 if $entered eq 'q';
 
 
 ## Выключаем отображение курсора
-print "\e[?25l";
+print "\033[?25l";
 Screen->clear;
 
 # Для каждого из файлов
@@ -139,9 +145,8 @@ foreach my $file_index ( 0..$#ARGV ) {
 
 }
 # Включаем отображение курсора в конце выполнения программы
-print "\e[?25h";
  
-$SIG{INT}() if $in_termux && $opt_s;
+$SIG{INT}();
 
 
 # POD
