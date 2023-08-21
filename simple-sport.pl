@@ -141,7 +141,7 @@ foreach my $file_index ( 0..$#ARGV ) {
 # Включаем отображение курсора в конце выполнения программы
 print "\e[?25h";
  
-$SIG{INT}() if $in_termux;
+$SIG{INT}() if $in_termux && $opt_s;
 
 
 # POD
@@ -163,7 +163,7 @@ This program will help you to do sport everytime and everythere: the program rea
 =head3 Options
 
     -s enables a sound alarm when executinag
-    -t 'exercise' make timer on
+    -t [exercise] make timer on
     -v show version of app
     -h show embedded help
 
