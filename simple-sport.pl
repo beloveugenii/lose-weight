@@ -3,47 +3,87 @@
 use strict;
 use utf8;
 use open qw / :std :utf8 /;
-
-our $NAME = 'simple-sport.pl';
-our $VERSION = '0.1.0';
-
 use FindBin qw / $Bin /;
 use Time::HiRes qw / time sleep /;
-
 use Getopt::Std;
-
-# Ключи для аргументов КС
-our ( $opt_h, $opt_v, $opt_s );
-
-# Обработчики аргументов КС
-sub help { system "perldoc $NAME"; exit 0 }
-sub version { die "$NAME\n$VERSION\n"; exit 0 }
-sub empty_start { die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" }
-
-
 use lib "$Bin";
 require 'libsport.pm';
 require "screen.pm";
 
+our $NAME = 'simple-sport.pl';
+our $VERSION = '0.1.1';
+
+# Ключи для аргументов КС
+our ( $opt_h, $opt_v, $opt_s, $opt_t);
+
+# Обработчики аргументов КС
+# Справка
+sub help { exec "perldoc $NAME" }
+
+# Версия
+sub version { die "$NAME\n$VERSION\n" }
+
+# Запуск без файла тренировки
+sub empty_start { die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" }
+
+# Таймер
+sub timer {
+    use Encode;
+    my $ex = decode( 'utf8', shift );
+    
+    print "\e[?25l";
+    
+    for ( my $timer = 0, $SIG{INT} = sub { print "\e[?25h\n"; exit 0 };; $timer ++ ) {
+        Screen->clear();
+        Screen->header( 'Таймер' );
+        print "\nТекущее упражнение: $ex\n" . "\n" x 6 . "\033[s" . "\n" x 12 . "\n\033[u"; 
+        Screen->print_big_nums( $timer );
+        sleep(1)
+    }
+}
+
 # Проверяем параметры КС и обрабатываем их
-getopts('vhs');
+getopts( 'vhst' );
 help() if $opt_h;
 version() if $opt_v;
+timer( $ARGV[0] ) if $opt_t;
+
+my $in_termux = 1 if $ENV{HOME} =~ /\/data.+/; 
 
 # Удаляем несуществующие файлы, и проверяем что хоть какие-то файлы остались
 @ARGV = grep -e, @ARGV;
 empty_start() unless @ARGV;
 
-# Ссылки на функции для изменения состояния среды Termux
-my ( $sound_on, $sound_off ) = prepare_termux();
-# Устанавливаем обработчик прерывания
-$SIG{INT} = $sound_off;
-
 # Если мы находимся в среде Termux
-if ( $ENV{HOME} =~ /\/data.+/ && $opt_s) {
-    # Включаем звук
-    &$sound_on;   
+if ( $in_termux && $opt_s ) {
+    my $termux = "$ENV{HOME}/.termux/termux.properties";
+    my $backup = $termux . '.bak';
+
+    # Изменяем настройки Termux
+    rename $termux, $backup or die "$!";
+    open my $new_file, '>', $termux;
+    open my $old_file, '<', $backup;
+    # Читаем файл резервной копии и одновременно записываем данные оттуда в новый файл. 
+    # Когда будет найдена строка с 'beep' она будет изменена и записана в новом виде
+    while ( <$old_file> ) {
+        s/#(.+\s)(beep)/$1$2/;
+        print $new_file $_
+    }
+    # Перезагружаем настройки Termux и подаем звуковой сигнал
+    system 'termux-reload-settings';
+    print "\a";
+
+    # Устанавливаем обработчик прерывания
+    $SIG{INT} = sub {
+        rename $backup, $termux if -e $backup;
+        system 'termux-reload-settings';
+        print "\e[2J\e[H\e[?25h\n";
+        exit 0
+    };
 }
+
+
+
 
 # Создаем объект тренировок куда передаем ссылку на массив с файлами
 my $t = Training->new( \@ARGV );
@@ -59,7 +99,7 @@ exit 0 if $entered eq 'q';
 
 
 ## Выключаем отображение курсора
-print "\033[?25l";
+print "\e[?25l";
 Screen->clear;
 
 # Для каждого из файлов
@@ -99,38 +139,9 @@ foreach my $file_index ( 0..$#ARGV ) {
 
 }
 # Включаем отображение курсора в конце выполнения программы
-print "\033[?25h";
+print "\e[?25h";
  
-&$sound_off;
-
-sub prepare_termux {
-    # Функция возвращает две анонимные фукнции.
-    # Одна включает в Termux звук. Другая возращает среду в исходное состояние
-    my $termux = "$ENV{HOME}/.termux/termux.properties";
-    my $backup = $termux . '.bak';
-    return 
-        sub {
-            rename $termux, $backup or die "$!";
-            open my $new_file, '>', $termux;
-            open my $old_file, '<', $backup;
-            # Читаем файл резервной копии и одновременно записываем данные оттуда в новый файл. 
-            # Когда будет найдена строка с 'beep' она будет изменена и записана в новом виде
-            while ( <$old_file> ) {
-                s/#(.+\s)(beep)/$1$2/;
-                print $new_file $_
-            }
-            # Перезагружаем настройки Termux и подаем звуковой сигнал
-            system 'termux-reload-settings';
-            print "\a"
-        },
-        sub {
-            rename $backup, $termux if -e $backup;
-            system 'termux-reload-settings';
-            print "\033[2J\033[H\033[?25h";
-            exit 0
-        }
-}
-
+$SIG{INT}() if $in_termux;
 
 
 # POD
@@ -152,6 +163,7 @@ This program will help you to do sport everytime and everythere: the program rea
 =head3 Options
 
     -s enables a sound alarm when executinag
+    -t 'exercise' make timer on
     -v show version of app
     -h show embedded help
 

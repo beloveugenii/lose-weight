@@ -14,6 +14,7 @@ This program will help you to do sport everytime and everythere: the program rea
 ### Options
 
     -s enables a sound alarm when executinag
+    -t 'exercise' make timer on
     -v show version of app
     -h show embedded help
 
