@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-from time import sleep
-from datetime import date
-# После отладки перенести в файл модуля screen.py
 from os import get_terminal_size                       
 
 screen_width = get_terminal_size()[0]
@@ -22,7 +19,14 @@ def colored(color, text):
         return "\033[31m" + text + "\033[97m"
 
 def menu(items):
+    print('-' * screen_width)
     for item in items:
         print('[' + item[0] + ']' + item[1:])
+    print('-' * screen_width)
+
+def promt(what):
+    # Функция полчает значение 'строка' и возвращает его в виде: 'Строка: '
+    return what[0].upper() + what[1:] + ': '
+
 
 

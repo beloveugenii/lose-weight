@@ -14,10 +14,6 @@ cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f RE
 # Дневник питания
 cur.execute("CREATE TABLE IF NOT EXISTS diary(date TEXT, title TEXT, value REAL)")
 
-def promt(what):
-    # Функция полчает значение 'строка' и возвращает его в виде: 'Строка: '
-    return what[0].upper() + what[1:] + ': '
-
 def is_float(it):
     # Функция аргумент - число или числововая строка
     # Возвращает Истинну, если параметр - число с точкой
@@ -48,7 +44,7 @@ def get_data(for_place, delay):
     for key in data:
         if key == 'title':
             while True:
-                it = input(promt(data[key]))
+                it = input(scr.promt(data[key]))
                 if len(it) < 1:
                     print('Требуется название')
                     sleep(delay)
@@ -58,7 +54,7 @@ def get_data(for_place, delay):
         else:
             while True:
                 try:
-                    it = input(promt(data[key]))
+                    it = input(scr.promt(data[key]))
                     if it == '':
                         it = 0
                     data[key] = float(it)
@@ -68,19 +64,26 @@ def get_data(for_place, delay):
                     sleep(delay)
 
     return data
+
+
+
+current_date = datetime.date.today().strftime('%Y-%m-%d')
 scr.clear()
-scr.header('Привет')
+
+scr.header('Дневник питания ' + current_date)
+
 #diary = cur.execute("SELECT title, value FROM diary WHERE date = ?", (datetime.date.today(),))
-diary = cur.execute("SELECT date, d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ?", (datetime.date.today(),))
+
+diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ?", (current_date,))
 
 for line in diary.fetchall():
     print(line)
 
-
+scr.menu(['add'])
 
 if input() == 'a':
     n = get_data('diary', 0)
-    n['date'] = datetime.date.today() 
+    n['date'] = current_date 
     
     res = (cur.execute("SELECT title, kcal FROM food WHERE title = :title", n)).fetchone()
 
@@ -99,11 +102,8 @@ if input() == 'a':
     con.commit()
 
 
-
-#print(n['title'] + '\n' + str(n['value'] / 100 * res[1])) 
     
 
 # запрашиваем бд, есть ли такое блюдо уже в ней
 # Если есть - дергаем данные, подсчитываем клорийность порции
-# если нет - get_data('db', 0)
 
