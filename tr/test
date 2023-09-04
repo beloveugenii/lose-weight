@@ -1,9 +1,0 @@
-name='тест'
-pause=2s
-relax=2s
-repeats=2
-on_end=2s
-
-ex1:2s
-ex2:2s
-ex3:2s

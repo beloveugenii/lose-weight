@@ -30,13 +30,14 @@ use Term::Completion qw / Complete /;
     sub new { bless \$screen, $_[0] }
     
     sub clear { print "\033[2J\033[H" }
-
+    
     sub header {
         my ( $class, $header, $aref ) = @_;
+        my $size = (Term::ReadKey::GetTerminalSize)[0];
+
         my $hl = length $header;
         $hl = ( $hl % 2 == 0 ) ? $hl :  $hl + 1;
         my $hf = ' ' x ( ( $size - $hl) / 2 );
-
         $class->clear;
         printf "%s\n%s%*s%s\n%s\n", $line, $hf, $hl, $header, $hf, $line;
         
@@ -64,6 +65,7 @@ use Term::Completion qw / Complete /;
 
     sub print_big_nums {
         my ( $class, $digit ) = ( shift, shift );
+        my $size = (Term::ReadKey::GetTerminalSize)[0];
         my $f = int ( ($size - 27 ) / 4 );
         my ( $l, $c, $r ) = $class->get_digit( $digit );
             printf "%s%9s%s%9s%s%9s%s\n",
@@ -90,52 +92,11 @@ use Term::Completion qw / Complete /;
 
 
 
-    sub validate {
-        # Строка для проверки и требуемое значение
-        my ( $class, $str, $what ) = @_;
-    
-        my %re = ( 
-            num => 
-            [ '^-?\d+(\.\d+)?$', 'Must be a number' ],
-            pos => 
-            [ '^\d+(\.\d+)?$', 'Must be a positive number' ],
-            int => 
-            [ '^-?\d+$', 'Must be an integer' ],
-            blank => 
-            [ '^$', 'Can\'t be empty' ],
-            word => 
-            [ '^[a-zA-Z0-9А-Яа-я ]+$', 'Must be a normal word' ],
-            gender =>
-            [ '^[mMfF]$', 'Must be M or F'],
-        );
-        if ( $str =~ qr(${$re{$what}}[0]) ) { 
-            $str 
-        }
-        else { 
-            print "\t${$re{$what}}[1]\n"; 
-            undef
-        }
-    }
-
-    sub message {
-        my ( $class, $name, $strref ) = @_;
-
-        my $msg = 
-            ( $name eq 'new' ) ? 
-                qq /Похоже, что Вы открыли дневник первый раз.\nДля корректной работы необходимо ввести некоторые данные о себе.\n\n/ :
-            ( $name eq 'gender' || $name eq 'age' || $name eq 'weight' || $name eq 'height' ) ? 
-                qq /В начале требуется узнать базисную потребность организма в калориях без учета активности:\nдля мужчин: 5 + (10 × вес [кг]) + (6,25 × рост [см]) − (5 × возраст [лет])\nдля женщин: (10 × вес [кг]) + (6,25 × рост [см]) − (5 × возраст [лет]) − 161\n\n/ : 
-            ($name eq 'name') ? 
-                qq /Как к Вам обращаться?\n\n/ : 
-            ( $name eq 'activity' ) ?
-                qq/Базовую потребнось следует скорректировать с учетом ежедневной нагрузки:\n1.2: если ваша активность в основном сводится к перемещению с кровати на диван\n1.375: если вы более активны и заглушаете совесть лёгкими тренировками до 3 раз в неделю\n1.55: если вам не чужды умеренные занятия спортом от 3 до 5 раз в неделю\n1.725: если вы нагружаете себя тяжёлыми тренировками 6–7 раз в неделю\n1.9: если вы выкладываетесь на всю катушку (работаете физически, тренируетесь дважды в день, выполняете силовые упражнения)\n\n/ : "$strref"; 
-    
-        print $msg;
-    }
 
     sub menu {
         my $class = shift;
         my @items = @_;
+        my $size = (Term::ReadKey::GetTerminalSize)[0];
         push @items, ' ' unless ( @items % 2 == 0 );
 
         my $longest;

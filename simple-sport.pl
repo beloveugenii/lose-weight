@@ -7,40 +7,14 @@ use FindBin qw / $Bin /;
 use Time::HiRes qw / time sleep /;
 use Getopt::Std;
 use lib "$Bin";
-require 'libsport.pm';
+require "libsport.pm";
 require "screen.pm";
 
 our $NAME = 'simple-sport.pl';
-our $VERSION = '0.1.1';
+our $VERSION = '0.1.2';
 
 # Ключи для аргументов КС
 our ( $opt_h, $opt_v, $opt_s, $opt_t);
-
-# Обработчики аргументов КС
-# Справка
-sub help { exec "perldoc $NAME" }
-
-# Версия
-sub version { die "$NAME\n$VERSION\n" }
-
-# Запуск без файла тренировки
-sub empty_start { die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" }
-
-# Таймер
-sub timer {
-    use Encode;
-    my $ex = decode( 'utf8', shift );
-    
-    print "\033[?25l";
-    
-    for ( my $timer = 0, $SIG{INT} = sub { print "\033[?25h\n"; exit 0 };; $timer ++ ) {
-        Screen->clear();
-        Screen->header( 'Таймер' );
-        print "\nТекущее упражнение: $ex\n" . "\n" x 6 . "\033[s" . "\n" x 12 . "\n\033[u"; 
-        Screen->print_big_nums( $timer );
-        sleep(1)
-    }
-}
 
 # Проверяем параметры КС и обрабатываем их
 getopts( 'vhst' );
@@ -89,15 +63,14 @@ else {
 }
 
 
-
+# Хеш для хранения статистики
+my %statistic;
 
 # Создаем объект тренировок куда передаем ссылку на массив с файлами
 my $t = Training->new( \@ARGV );
 
 ## Показываем стартовый экран, с программой упражнений и всеми данными
 Screen->header('Simple sport', [ grep {$_ = $t->get_option($_, 'name')} 0..$#ARGV ] );
-
-
 
 ##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
 chomp ( my $entered = <STDIN> ); 
@@ -130,12 +103,16 @@ foreach my $file_index ( 0..$#ARGV ) {
             print "\nТекущее упражнение: $ex $duration\n" . "\n" x 6 . "\033[s" . "\n" x 12; 
             print "Следующее упражнение: @{$list->[$index + 1]}\n" if $list->[$index + 1];
             
-            for (my $timer = $duration; $timer >= 0; $timer--, sleep 1 ) {
+            for (my $timer = $duration; $timer >= 0; $timer-- ) {
                 # Перемещаем курсор в положение для печати цифр и выводим их
                 print "\033[u";
                 # Звуковой сигнал
                 print "\a" if ( $timer < 3 || $timer == int ( $duration / 2 ) );
+  
+                $statistic{$ex}++ if $timer != 0;
+
                 Screen->print_big_nums( $timer );
+                sleep 1;
             }
             # Очищаем экран между упражнениями
             Screen->clear;
@@ -146,7 +123,48 @@ foreach my $file_index ( 0..$#ARGV ) {
 }
 # Включаем отображение курсора в конце выполнения программы
  
+
+sub show_statistic {
+    my $hashref = shift;
+    Screen->header('Статистика тренировки');
+    foreach ( keys %$hashref ) {
+        next if $_ eq 'Пауза' || $_ eq 'Конец тренировки' || $_ eq 'Время отдохнуть' || $_ eq 'Приготовьтесь';
+        print "$_ $$hashref{$_}\n" 
+    }
+}
+
+show_statistic(\%statistic);
+<STDIN>;
 $SIG{INT}();
+
+
+
+# Обработчики аргументов КС
+# Справка
+sub help { exec "perldoc $NAME" }
+
+# Версия
+sub version { die "$NAME\n$VERSION\n" }
+
+# Запуск без файла тренировки
+sub empty_start { die "No file set.\nUsage: simple-sport [OPTIONS] [FILE]\n" }
+
+# Таймер
+sub timer {
+    use Encode;
+    my $ex = decode( 'utf8', shift );
+    
+    print "\033[?25l";
+    
+    for ( my $timer = 0, $SIG{INT} = sub { print "\033[?25h\n"; exit 0 }; ; $timer ++ ) {
+        Screen->clear();
+        Screen->header( 'Таймер' );
+        print "\nТекущее упражнение: $ex\n" . "\n" x 6 . "\033[s" . "\n" x 12 . "\n\033[u"; 
+        Screen->print_big_nums( $timer );
+        sleep(1)
+    }
+}
+
 
 
 # POD
