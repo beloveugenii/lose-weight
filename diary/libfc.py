@@ -1,4 +1,5 @@
 from os import get_terminal_size                       
+from time import sleep
 # Библиотека с функциями для дневника питания
 
 screen_width = get_terminal_size()[0]
