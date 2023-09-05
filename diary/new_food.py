@@ -3,107 +3,57 @@
 import sqlite3
 from time import sleep
 import datetime
-import screen as scr
+import libfc as fc
 
+# Создаем подключение к БД и объект для работы с sql-запросами
 con = sqlite3.connect('fc.db')
 cur = con.cursor()
 
-# Данные о продуктах
+# Создаем таблицы с данными о продуктах и дневник питания
 cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f REAL, c REAL)")
-
-# Дневник питания
 cur.execute("CREATE TABLE IF NOT EXISTS diary(date TEXT, title TEXT, value REAL)")
 
-def is_float(it):
-    # Функция аргумент - число или числововая строка
-    # Возвращает Истинну, если параметр - число с точкой
-    it = str(it)
-    if it.startswith('-'):
-        it = it[1:]
-    parts = it.split('.')
-    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
-
-
-
-
-
-
-
-
-def get_data(for_place, delay):
-    # Функция последовательно запрашивает данные, зависящие от первого параметра - места, куда они будут сохраняться
-    # Второй параметр - задержка в секундах между появлением сообщения о неверном вводе и новым приглашением на ввод
-    # Название любая не пустая строка, остальные параметры - натуральные или вещественные числа
-    # Возвращает словарь с данными
-    data = {}
-    if for_place == 'db':
-        data = {'title': 'название', 'kcal': 'калорийность', 'p': 'содержание белков', 'f': 'содержание жиров', 'c': 'содержание углеводов'}
-    elif for_place == 'diary':
-        data = {'title': 'блюдо', 'value': 'количество'}
-
-    for key in data:
-        if key == 'title':
-            while True:
-                it = input(scr.promt(data[key]))
-                if len(it) < 1:
-                    print('Требуется название')
-                    sleep(delay)
-                else:
-                    data[key] = it
-                    break
-        else:
-            while True:
-                try:
-                    it = input(scr.promt(data[key]))
-                    if it == '':
-                        it = 0
-                    data[key] = float(it)
-                    break
-                except ValueError:
-                    print('Здесь требуется число')
-                    sleep(delay)
-
-    return data
-
-
-
 current_date = datetime.date.today().strftime('%Y-%m-%d')
-scr.clear()
 
-scr.header('Дневник питания ' + current_date)
+while True:
+    fc.clear()
+    fc.header('Дневник питания ' + current_date)
 
-#diary = cur.execute("SELECT title, value FROM diary WHERE date = ?", (datetime.date.today(),))
+    diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ?", (current_date,))
 
-diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ?", (current_date,))
-
-for line in diary.fetchall():
-    print(line)
-
-scr.menu(['add'])
-
-if input() == 'a':
-    n = get_data('diary', 0)
-    n['date'] = current_date 
+    # информация о пользовтеле
+    fc.get_diary(diary.fetchall())
     
-    res = (cur.execute("SELECT title, kcal FROM food WHERE title = :title", n)).fetchone()
-
-
-    if res is None:
-        print('\nПозоже, что такого блюда нет в базе\nТребуется ввод дополнительной инофрмации\n')
+    fc.menu(['add', 'quit', 'testts', 'strings', 'a', 'text'])
     
-        d = get_data('db', 0)
+    action = input()
+    if action == 'a':
+        n = fc.get_data('diary', 0)
+        n['date'] = current_date 
+        
+        # Пытаемся получить данные из БД
+        res = (cur.execute("SELECT title, kcal FROM food WHERE title = :title", n)).fetchone()
+
+        if res is None:
+            print('\nПохоже, что такого блюда нет в базе\nТребуется ввод дополнительной инофрмации\n')
     
-        cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
+            d = fc.get_data('db', 0)
+    
+            cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
+            con.commit()
+    
+            res = cur.execute("SELECT title, kcal FROM food WHERE title = :title", n)
+
+        cur.execute("INSERT INTO diary VALUES(:date, :title, :value)", n)
         con.commit()
+    elif action == 'q':
+        con.close()
+        exit(0)
+    else:
+        print('Неизвестная команда')
+        sleep(1)
+
+
     
-        res = cur.execute("SELECT title, kcal FROM food WHERE title = :title", n)
 
-    cur.execute("INSERT INTO diary VALUES(:date, :title, :value)", n)
-    con.commit()
-
-
-    
-
-# запрашиваем бд, есть ли такое блюдо уже в ней
-# Если есть - дергаем данные, подсчитываем клорийность порции
 
