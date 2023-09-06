@@ -12,6 +12,9 @@ require "screen.pm";
 
 our $NAME = 'simple-sport.pl';
 our $VERSION = '0.1.2';
+my $in_termux = 1 if $ENV{HOME} =~ /\/data.+/; 
+my $statistic = {};
+
 
 # Ключи для аргументов КС
 our ( $opt_h, $opt_v, $opt_s, $opt_t);
@@ -21,8 +24,6 @@ getopts( 'vhst' );
 help() if $opt_h;
 version() if $opt_v;
 timer( $ARGV[0] ) if $opt_t;
-
-my $in_termux = 1 if $ENV{HOME} =~ /\/data.+/; 
 
 # Удаляем несуществующие файлы, и проверяем что хоть какие-то файлы остались
 @ARGV = grep -e, @ARGV;
@@ -58,13 +59,12 @@ if ( $in_termux && $opt_s ) {
 else {
     $SIG{INT} = sub { 
         print "\033[2J\033[H\033[?25h\n";
+        show_statistic($statistic);
         exit 0
     };
 }
 
 
-# Хеш для хранения статистики
-my %statistic;
 
 # Создаем объект тренировок куда передаем ссылку на массив с файлами
 my $t = Training->new( \@ARGV );
@@ -109,7 +109,7 @@ foreach my $file_index ( 0..$#ARGV ) {
                 # Звуковой сигнал
                 print "\a" if ( $timer < 3 || $timer == int ( $duration / 2 ) );
   
-                $statistic{$ex}++ if $timer != 0;
+                $statistic->{$ex}++ if $timer != 0;
 
                 Screen->print_big_nums( $timer );
                 sleep 1;
@@ -124,18 +124,21 @@ foreach my $file_index ( 0..$#ARGV ) {
 # Включаем отображение курсора в конце выполнения программы
  
 
+$SIG{INT}();
+<STDIN>;
+
 sub show_statistic {
     my $hashref = shift;
     Screen->header('Статистика тренировки');
-    foreach ( keys %$hashref ) {
-        next if $_ eq 'Пауза' || $_ eq 'Конец тренировки' || $_ eq 'Время отдохнуть' || $_ eq 'Приготовьтесь';
-        print "$_ $$hashref{$_}\n" 
+    while ( my ($ex, $dur) = each %$hashref ) {
+        next if $ex eq 'Пауза' ||
+                $ex eq 'Конец тренировки' || 
+                $ex eq 'Время отдохнуть' || 
+                $ex eq 'Приготовьтесь';
+                $dur =  ( $dur >= 60 ) ? sprintf "%sм %sс", $dur // 60, $dur % 60 : sprintf "%sс", $dur;
+        print "$ex: $dur\n" 
     }
 }
-
-show_statistic(\%statistic);
-<STDIN>;
-$SIG{INT}();
 
 
 
