@@ -22,7 +22,7 @@ while True:
     diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ?", (current_date,))
 
     # информация о пользовтеле
-    fc.get_diary(diary.fetchall())
+    fc.print_diary(diary.fetchall())
     
     fc.menu(['add', 'quit', 'testts', 'strings', 'a', 'text'])
     
