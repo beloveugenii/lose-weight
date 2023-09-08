@@ -34,24 +34,17 @@ def header(text):
 def menu(items):
     # Функция получает список и выводит его в виде меню, ограниченного рамкой
     if len(items) % 2 == 1:
-        items.append('')
+        items.append(' ')
     
     tf, ef = get_fields(screen_width, 2,items)
 
     print('-' * screen_width)
-    i = 0
-    while i < len(items) - 1:
+    for i in range(0, len(items) - 1, 2):
         f, s = items[i], items[i+1]
         print('%-s%-*s%-s%-*s%-s' % 
               (ef, tf, f, ef, 
                tf, s, ef))
-        i += 2
     print('-' * screen_width)
-
-
-
-
-
 
 def print_diary(arr):
     # Показывает содержимое дневника за текущий день
