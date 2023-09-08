@@ -53,6 +53,7 @@ if ( $in_termux && $opt_s ) {
         rename $backup, $termux if -e $backup;
         system 'termux-reload-settings';
         print "\033[2J\033[H\033[?25h\n";
+        show_statistic($statistic);
         exit 0
     };
 }
