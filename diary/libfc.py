@@ -14,11 +14,8 @@ def promt(what):
     return what[0].upper() + what[1:] + ': '
 
 def get_fields(screen_width, fields, elem_array):
-    # функция получает ширину экрана,
-    # количество полей с текстом и
-    # список элементов в виде массива
-    # возвращает ширину поля под текст и
-    # ширину просвета между колонками
+    # Функция получает ширину экрана, количество полей с текстом и список элементов в виде массива
+    # Возвращает ширину поля под текст и ширину просвета между колонками
     l = max( [len(elem) for elem in elem_array] )
     f = ' ' * ((screen_width - l * fields) // ( fields + 1))
     return l, f
@@ -36,7 +33,7 @@ def menu(items):
     if len(items) % 2 == 1:
         items.append(' ')
     
-    tf, ef = get_fields(screen_width, 2,items)
+    tf, ef = get_fields(screen_width, 2, items)
 
     print('-' * screen_width)
     for i in range(0, len(items) - 1, 2):
@@ -46,34 +43,35 @@ def menu(items):
                tf, s, ef))
     print('-' * screen_width)
 
-def print_diary(arr):
+def print_diary(ud, arr):
+
+    ##!!!!!!!!!!!!!!!!!! ВСЮ ВЕДЕТ ПРИ ДЛИННОЙ СТРОКЕ
     # Показывает содержимое дневника за текущий день
-    format = '%s%-*s%s%*s%s%*s%s'
-    diary = []
+    #diary = []
     t_kcal = 0
+   
+    basic = 10 * ud['weight'] + 6.25 * ud['height'] - 5 * ud['age']
 
-    l, df = get_fields(
-            screen_width,
-            3,
-            ['продукт', 'количество', 'ккал'] + 
-            [i[0] for i in arr])
+    # Для мужчин
+    if ud['sex'] in 'мМmM':
+        basic = "%.1f" % ((basic + 5)  * ud['activity'])
+    # Для женщин
+    elif ud['sex'] in 'жЖfF':
+        basic = "%.1f" % ((basic - 161) * ud['activity'])
 
-#    print(format % 
-#          (df, l, 'Продукт'.upper(), 
-#           df, l, 'количество'.upper(), 
-#           df, l, 'ккал'.upper(), df))
-    
+    l, df = get_fields(screen_width, 3, [ 'продукт', 'количество', 'ккал'] + [i[0] for i in arr])
+
+    print('%s%-s%s%*s%s%*s%s' % 
+          (df, 'Суточная норма калорий:'.upper(), df, l, '', df, l, basic, df))
+
     for line in arr:
         t_kcal += line[2]
-        print(format % 
-              (df, l,  line[0], 
-               df, l, line[1], 
-               df, l, line[2], df))
+        print('%s%-*s%s%*s%s%*s%s' % 
+              (df, l,  line[0][0].upper() + line[0][1:], df, l, line[1], df, l, line[2], df))
     print('-' * screen_width) 
-    print(format % 
-          (df, l, 'Всего'.upper(), 
-           df, l, '', 
-           df, l, t_kcal, df))
+
+    print('%s%-*s%s%*s%s%*s%s' % 
+          (df, l, 'Всего'.upper(), df, l, '', df, l, t_kcal, df))
     
 
 def is_float(it):
@@ -126,17 +124,13 @@ def get_data(for_place, delay):
 
     return data
 
-def get_calories_norm(ud):
-    # Функция получает данные о пользователе и возвращает дневнуютнорму калорий
-    
-    basic = 10 * ud['weight'] + 6.25 * ud['height'] - 5 * ud['age']
+def tup_to_dict(keys, values):
+    # Принимает два списка и строит из них словарь
+    d = {}
+    for i in range(len(keys)):
+        d[keys[i]] = values[i]
+    return d
 
-    # Для мужчин
-    if ud['sex'] in 'мМmM':
-       return (basic + 5)  * ud['activity']
-    # Для женщин
-    elif ud['sex'] in 'жЖfF':
-        return (basic - 161) * ud['activity']
 
 
 
