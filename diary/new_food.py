@@ -29,8 +29,10 @@ except FileNotFoundError:
             print("\t%d\t%s" % line)
         fc.menu(['new user', 'user id', 'quit'])
 
-        act = input('>> ').strip()
-
+        act = ''
+        while len(act) == 0:
+            act = input('>> ').strip()
+            
         if act == 'n':
         # Можно создать нового пользователя
             ud = fc.get_data('user_data', 0)
@@ -38,7 +40,7 @@ except FileNotFoundError:
             con.commit()
         elif act == 'q':
             exit(0)
-        else:
+        elif act.isdigit():
         # Можно выбрать существующего, если ввести его номер
             if int(act) in [ line[0] for line in cur.execute('SELECT rowid FROM users').fetchall()]:
                 user_rowid = act
@@ -48,8 +50,9 @@ except FileNotFoundError:
                 break 
             else:
                 print("Нет пользователя с таким номером")
-                sleep(1)
-
+        else:
+            print('Выберите пользователя или создайте нового')
+            sleep(1)
         
 
 current_date = datetime.date.today().strftime('%Y-%m-%d')
@@ -68,7 +71,7 @@ while True:
     fc.print_diary(ud, diary.fetchall())
     fc.menu(['add in diary', 'new in database','quit'])
     
-    action = input('>> ')
+    action = input('>> ').strip()
     if action in 'aA':
         # Добавляем новое блюдо
         n = fc.get_data('diary', 1)

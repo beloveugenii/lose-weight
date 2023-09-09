@@ -13,19 +13,25 @@ def promt(what):
     # Функция полчает значение 'строка' и возвращает его в виде: 'Строка: '
     return what[0].upper() + what[1:] + ': '
 
-def get_fields(screen_width, fields, elem_array):
-    # Функция получает ширину экрана, количество полей с текстом и список элементов в виде массива
-    # Возвращает ширину поля под текст и ширину просвета между колонками
+def get_fields_len(screen_width, fields, elem_array):
+    # Функция получает ширину экрана и список содержимого колонки
+    # Возвращает ширину поля под текст
+    #fields = len(elem_array)
     l = max( [len(elem) for elem in elem_array] )
-    f = ' ' * ((screen_width - l * fields) // ( fields + 1))
-    return l, f
+    ef = (screen_width - fields * l) // (fields + 1)
+    ### !!!!!!!!!!!!!!!!!!!!!!! НУЖНО ПРОСМАТРИВАТЬ КАЖДУЮ КОЛОНКУ ДАННЫХ И СЧИТАТЬ ДЛЯ НЕЕ ШИРИНУ
+    #### КОЛИЧЕСТВО КОЛОНОК - длина переданного массива с данными ( 1 элемент - 1 поле, два элемента - 2 поля)
+    #### ПОСЛЕ ПОДСЧЕТА ВСЕХ ШИРИН КОЛОНОК - СЧИТАТЬ ШИРИНУ ПРОБЕЛОВ, ПОКА ИХ СОВМЕСТНАЯ СУММА НЕ БУДЕТ чуть меньше или равна ширине экрана
+    while fields * l + ef * (fields + 1) - fields - 1 > screen_width - 2:
+        ef -= 1
+    
+    return l, ef
 
 def header(text):
     # Функция печатает заголовок экрана   
-    ht, hf = get_fields(screen_width, 1, [text])
-
+    ht, ef = get_fields_len(screen_width, 1,[text])
     print('-' * screen_width)
-    print('%s%-*s%s' % (hf, ht, text, hf))
+    print('%s%-*s%s' % (' ' * ef, ht, text, ' ' *ef))
     print('-' * screen_width)
 
 def menu(items):
@@ -33,45 +39,37 @@ def menu(items):
     if len(items) % 2 == 1:
         items.append(' ')
     
-    tf, ef = get_fields(screen_width, 2, items)
-
+    tf, ef = get_fields_len(screen_width, 2, items)
     print('-' * screen_width)
     for i in range(0, len(items) - 1, 2):
         f, s = items[i], items[i+1]
-        print('%-s%-*s%-s%-*s%-s' % 
-              (ef, tf, f, ef, 
-               tf, s, ef))
+        print('%-s%-*s%-s%-*s%-s' % (' ' * ef, tf, f, ' ' * ef, tf, s, ' ' * ef))
     print('-' * screen_width)
 
 def print_diary(ud, arr):
 
-    ##!!!!!!!!!!!!!!!!!! ВСЮ ВЕДЕТ ПРИ ДЛИННОЙ СТРОКЕ
     # Показывает содержимое дневника за текущий день
-    #diary = []
-    t_kcal = 0
-   
+    t_kcal = sum([line[2] for line in arr])
     basic = 10 * ud['weight'] + 6.25 * ud['height'] - 5 * ud['age']
 
     # Для мужчин
     if ud['sex'] in 'мМmM':
-        basic = "%.1f" % ((basic + 5)  * ud['activity'])
+        basic = (basic + 5)  * ud['activity']
     # Для женщин
     elif ud['sex'] in 'жЖfF':
-        basic = "%.1f" % ((basic - 161) * ud['activity'])
+        basic = (basic - 161) * ud['activity']
 
-    l, df = get_fields(screen_width, 3, [ 'продукт', 'количество', 'ккал'] + [i[0] for i in arr])
+    l, f = get_fields_len(screen_width, 3, [i[0] for i in arr] + ['Суточная норма калорий:'])
+    print(screen_width, l, f)
 
-    print('%s%-s%s%*s%s%*s%s' % 
-          (df, 'Суточная норма калорий:'.upper(), df, l, '', df, l, basic, df))
-
-    for line in arr:
-        t_kcal += line[2]
-        print('%s%-*s%s%*s%s%*s%s' % 
-              (df, l,  line[0][0].upper() + line[0][1:], df, l, line[1], df, l, line[2], df))
+    print('%s%-*s%s%*.1f' % (' ' * f, l, 'Суточная норма калорий:'.upper(), ' ' * f, l, basic ))
+    print('%s%-*s%s%*.1f' % (' ' * f, l, 'Всего:'.upper(), ' ' * f, l, t_kcal))
     print('-' * screen_width) 
 
-    print('%s%-*s%s%*s%s%*s%s' % 
-          (df, l, 'Всего'.upper(), df, l, '', df, l, t_kcal, df))
+    for line in arr:
+        print('%s%-*s%s%*s%s%*s' % 
+              (' ' * f, l,  line[0][0].upper() + line[0][1:], ' ' * f,  l // 2, line[1], ' ' * f, l // 2 , line[2] ))
+
     
 
 def is_float(it):
