@@ -52,14 +52,12 @@ if ( $in_termux && $opt_s ) {
     $SIG{INT} = sub {
         rename $backup, $termux if -e $backup;
         system 'termux-reload-settings';
-        print "\033[2J\033[H\033[?25h\n";
         show_statistic($statistic);
         exit 0
     };
 }
 else {
     $SIG{INT} = sub { 
-        print "\033[2J\033[H\033[?25h\n";
         show_statistic($statistic);
         exit 0
     };
@@ -126,10 +124,10 @@ foreach my $file_index ( 0..$#ARGV ) {
  
 
 $SIG{INT}();
-<STDIN>;
 
 sub show_statistic {
     my $hashref = shift;
+    print "\033[2J\033[H\033[?25h\n";
     Screen->header('Статистика тренировки');
     while ( my ($ex, $dur) = each %$hashref ) {
         next if $ex eq 'Пауза' ||
@@ -139,6 +137,7 @@ sub show_statistic {
                 $dur =  ( $dur >= 60 ) ? sprintf "%sм %sс", $dur // 60, $dur % 60 : sprintf "%sс", $dur;
         print "$ex: $dur\n" 
     }
+    <STDIN>
 }
 
 
