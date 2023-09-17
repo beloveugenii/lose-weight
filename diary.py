@@ -4,7 +4,6 @@ import sqlite3, datetime
 from time import sleep
 import libui as ui
 
-   
 def is_float(it):
     # Функция аргумент - число или числововая строка
     # Возвращает Истинну, если параметр - число с точкой
@@ -14,44 +13,49 @@ def is_float(it):
     parts = it.split('.')
     return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
 
-def get_data(for_place, delay):
-    # Функция последовательно запрашивает данные, зависящие от первого параметра - места, куда они будут сохраняться
+def get_data(params, delay):
+    data = dict()
+    # Функция последовательно запрашивает данные, переданные в первом параметрe
     # Второй параметр - задержка в секундах между появлением сообщения о неверном вводе и новым приглашением на ввод
     # Название любая не пустая строка, остальные параметры - натуральные или вещественные числа
     # Возвращает словарь с данными
-    data = {'title': 'блюдо', 'value': 'количество'}
-    
-    if for_place == 'db':
-        
-        data = {'title': 'название', 'kcal': 'калорийность', 'p': 'содержание белков', 'f': 'содержание жиров', 'c': 'содержание углеводов'}
-    
-    elif for_place == 'user_data':
-        
-        data = {'name': 'ваше имя', 'sex': 'ваш пол', 'age': 'ваш возраст', 'height': 'ваш рост', 'weight': 'ваш вес', 'activity': 'ваша активность'}
-
-    for key in data:
+    for key in params:
         if key in ('title', 'name', 'sex'):
             while True:
-                it = ui.promt(data[key])
+                it = ui.promt(params[key])
                 if len(it) < 1:
                     print('Требуется строка')
                     sleep(delay)
                 else:
-                    data[key] = it
-                    break
-        else:
+                    if key == 'sex' and it not in 'мМжЖmMfF':
+                        print('Требуется обозначение пола: [мМ или жЖ]')
+                        sleep(delay)
+                    else:
+                        data[key] = it
+                        break
+        elif key in ('kcal', 'age', 'height', 'weight', 'value'):
             while True:
-                if key == 'activity':
-                    print("1.2 – минимальная активность, сидячая работа, не требующая значительных физических нагрузок", "1.375 – слабый уровень активности: интенсивные упражнения не менее 20 минут один-три раза в неделю", "1.55 – умеренный уровень активности: интенсивная тренировка не менее 30-60 мин три-четыре раза в неделю", "1.7 – тяжелая или трудоемкая активность: интенсивные упражнения и занятия спортом 5-7 дней в неделю или трудоемкие занятия", "1.9 – экстремальный уровень: включает чрезвычайно активные и/или очень энергозатратные виды деятельности", sep='\n')
                 try:
-                    it = ui.promt(data[key])
-                    if for_place != 'user_data' and it == '':
-                        it = 0
+                    it = ui.promt(params[key])
                     data[key] = float(it)
                     break
                 except ValueError:
                     print('Здесь требуется число')
                     sleep(delay)
+        else:
+            while True:
+                if key == 'activity':
+                    print("1.2 – минимальная активность, сидячая работа, не требующая значительных физических нагрузок", "1.375 – слабый уровень активности: интенсивные упражнения не менее 20 минут один-три раза в неделю", "1.55 – умеренный уровень активности: интенсивная тренировка не менее 30-60 мин три-четыре раза в неделю", "1.7 – тяжелая или трудоемкая активность: интенсивные упражнения и занятия спортом 5-7 дней в неделю или трудоемкие занятия", "1.9 – экстремальный уровень: включает чрезвычайно активные и/или очень энергозатратные виды деятельности", sep='\n')
+                try:
+                    it = ui.promt(params[key])
+                    if it == '':
+                        it = 1 if key == 'activity' else 0
+                    data[key] = float(it)
+                    break
+                except ValueError:
+                    print('Здесь требуется число')
+                    sleep(delay)
+
 
     return data
 
@@ -59,7 +63,7 @@ def tup_to_dict(keys, values):
     # Принимает два списка и строит из них словарь
     d = {}
     for i in range(len(keys)):
-        d[keys[i]] = values[i]
+            d[keys[i]] = values[i]
     return d
 
 
@@ -89,11 +93,16 @@ except FileNotFoundError:
 
         act = ''
         while len(act) == 0:
-            act = ui.promt('>>').strip()[0]
+            act = ui.promt('>>').strip()
             
         if act == 'n':
-        # Можно создать нового пользователя
-            ud = get_data('user_data', 0)
+            ud = get_data( {'name': 'ваше имя', 
+                      'sex': 'ваш пол', 
+                      'age': 'ваш возраст', 
+                      'height': 'ваш рост', 
+                      'weight': 'ваш вес', 
+                      'activity': 'ваша активность'}, 0)
+
             cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", ud)
             con.commit()
         
@@ -122,7 +131,7 @@ def print_diary(ud, arr):
     t_kcal = sum([line[2] for line in arr])
     basic = 10 * ud['weight'] + 6.25 * ud['height'] - 5 * ud['age']
 
-    l, f = ui.get_fields_len(arr + [('суточная норма калорий:',)])
+    l, f = ui.get_fields_len(arr )
     # Для мужчин
     if ud['sex'] in 'мМmM':
         basic = (basic + 5)  * ud['activity']
@@ -130,19 +139,20 @@ def print_diary(ud, arr):
     elif ud['sex'] in 'жЖfF':
         basic = (basic - 161) * ud['activity']
 
-    print('%s%-*s%s%-*s%s%-*s%s' % (' ' * f, l[0], 'Суточная норма калорий:'.upper(),  ' ' * f, l[1], ' ',  ' ' * f, l[2], basic, ' ' * f))
-    print() 
+    print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'норма калорий:'.upper(),  ' ' * f, l[1], ' ',  ' ' * f, l[2], basic, ' ' * f))
     ui.print_as_table(arr,  ' ')
     print() 
-    print('%s%-*s%s%-*s%s%-*s%s' % (' ' * f, l[0], 'Всего:'.upper(),  ' ' * f, l[1], ' ', ' ' * f, l[2], t_kcal, ' ' * f))
+    print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'Всего:'.upper(),  ' ' * f, l[1], ' ', ' ' * f, l[2], t_kcal, ' ' * f))
     
  
-
-
 # Получаем данные пользователя из БД по его rowid
-ud = cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_rowid,))
 
-ud = tup_to_dict(('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), ud.fetchone())
+ud = (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_rowid,)).fetchone())
+if len(ud) == 0:
+    print('В базе данных нет пользователей\nУдалите файл настроек и перезапустите программу')
+    exit(-1)
+
+ud = tup_to_dict(('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), ud)
 
 while True:
     # Основной экран дневника питания
@@ -155,7 +165,8 @@ while True:
     try:
         print_diary(ud, diary)
     except IndexError:
-        print()
+        print(f'No records at {current_date}')
+
     # Выводим дневник и меню
     ui.menu(['add in diary', 'new in database','quit'], 2)
     
@@ -163,7 +174,8 @@ while True:
     
     if action in 'aA':
         # Добавляем новое блюдо
-        n = get_data('diary', 1)
+        n = get_data({'title': 'блюдо', 
+                      'value': 'количество'},1)
         n['date'] = current_date
         n['user'] = user_rowid
         
@@ -172,10 +184,16 @@ while True:
         
         # Если данных нет, то запрашиваем их у пользователя
         if res is None:
-            print('\nПохоже, что такого блюда нет в базе\nТребуется ввод дополнительной инофрмации\n')
+            print('Похоже, что такого блюда нет в базе\nТребуется ввод дополнительной инофрмации')
             
             # Добавляем новый продукт в БД
-            d = get_data('db', 0)
+            d = get_data({'kcal': 'калорийность', 
+                          'p': 'содержание белков', 
+                          'f': 'содержание жиров',
+                          'c': 'содержание углеводов'}, 1)
+            
+            d['title'] = n['title']
+
             cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
             con.commit()
             # Получаем данные о новом продукте
@@ -186,9 +204,18 @@ while True:
         con.commit()
     elif action in 'nN':
         # Добавляем новый продукт в БД
-        d = fc.get_data('db', 0)
+        d = get_data({'title': 'название',
+                      'kcal': 'калорийность', 
+                        'p': 'содержание белков', 
+                        'f': 'содержание жиров', 'c': 
+                        'содержание углеводов'}, 1)
+
         cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
         con.commit()
+
+    elif action in 'pP':
+        pass
+        current_date = datetime.date.today().strftime('%Y-%m-%d')
     
 
     elif action in 'qQ':
