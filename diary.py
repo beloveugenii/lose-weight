@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-import sqlite3, datetime
+import sqlite3, datetime, readline
 from time import sleep
 import libui as ui
+
+# Регистрация клавиши `tab` для автодополнения
+readline.parse_and_bind('tab: complete')
 
 def is_float(it):
     # Функция аргумент - число или числововая строка
@@ -91,6 +94,8 @@ except FileNotFoundError:
             print("\t%d\t%s" % line)
         ui.menu(['new user', 'user id', 'quit'], 2)
 
+        readline.set_completer(ui.cmpl(['n', 'q']).complete)
+
         act = ''
         while len(act) == 0:
             act = ui.promt('>>').strip()
@@ -154,6 +159,9 @@ if len(ud) == 0:
 
 ud = tup_to_dict(('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), ud)
 
+food_list = cur.execute("select title from food").fetchall()
+
+
 while True:
     # Основной экран дневника питания
     ui.clear()
@@ -170,9 +178,11 @@ while True:
     # Выводим дневник и меню
     ui.menu(['add in diary', 'new in database','quit'], 2)
     
+    readline.set_completer(ui.cmpl(['a', 'n', 'q']).complete)
     action = ui.promt('>>').strip()[0]
     
     if action in 'aA':
+        readline.set_completer(ui.cmpl([f[0] for f in food_list]).complete)
         # Добавляем новое блюдо
         n = get_data({'title': 'блюдо', 
                       'value': 'количество'},1)
@@ -227,5 +237,6 @@ while True:
 
 
     
+
 
 
