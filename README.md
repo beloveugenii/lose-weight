@@ -6,6 +6,7 @@ Simple-sport - minimalistic console sport assistant with calorie diary.
 ### Synopsis
 
 Usage: ./simple-sport.pl [OPTIONS] [FILE]
+
 Usage: ./diary.py
 
 ### Description
