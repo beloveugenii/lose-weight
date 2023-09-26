@@ -3,6 +3,7 @@
 import sqlite3, datetime, readline
 from time import sleep
 import libui as ui
+import libsui as sui
 
 # Регистрация клавиши `tab` для автодополнения
 readline.parse_and_bind('tab: complete')
@@ -88,19 +89,12 @@ try:
 except FileNotFoundError:
     while True:
         # Экран выбора пользователя
-        ui.clear()
-        ui.header('Выбор пользователя')
-        for line in (cur.execute('SELECT rowid, name FROM users').fetchall()):
-            print("\t%d\t%s" % line)
-        ui.menu(['new user', 'user id', 'quit'], 2)
-
-        readline.set_completer(ui.cmpl(['n', 'q']).complete)
-
-        act = ''
-        while len(act) == 0:
-            act = ui.promt('>>').strip()
+        act = sui.screen(
+                'Выбор пользователя', 
+                lambda: sui.print_as_table(cur.execute('SELECT rowid, name FROM users').fetchall(), ' '),
+                ['new user', 'chooce', 'quit'], 3)
             
-        if act == 'n':
+        if act.startswith('new'):
             ud = get_data( {'name': 'ваше имя', 
                       'sex': 'ваш пол', 
                       'age': 'ваш возраст', 
@@ -111,19 +105,22 @@ except FileNotFoundError:
             cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", ud)
             con.commit()
         
-        elif act == 'q':
+        elif act.startswith('q'):
             exit(0)
 
-        elif act.isdigit():
+        elif act.startswith('ch'):
+            user_rowid = sui.screen(
+                'Выбор пользователя', 
+                lambda: sui.print_as_table(cur.execute('SELECT rowid, name FROM users').fetchall(), ' '),
+                [str(n[0]) for n in cur.execute('select rowid from users').fetchall()] + ['quit'], 2)
+         
+            if user_rowid.startswith('q'):
+                exit(0)
         # Можно выбрать существующего, если ввести его номер
-            if int(act) in [ line[0] for line in cur.execute('SELECT rowid FROM users').fetchall()]:
-                user_rowid = act
-                f = open('config', 'a')
-                f.write('uid='+str(user_rowid)+'\n')
-                f.close()
-                break 
-            else:
-                print("Нет пользователя с таким номером")
+            f = open('config', 'a')
+            f.write('uid='+str(user_rowid)+'\n')
+            f.close()
+            break 
         else:
             print('Выберите пользователя или создайте нового')
             sleep(1)
@@ -133,22 +130,25 @@ current_date = datetime.date.today().strftime('%Y-%m-%d')
 
 def print_diary(ud, arr):
     # Показывает содержимое дневника за ень
-    t_kcal = sum([line[2] for line in arr])
-    basic = 10 * ud['weight'] + 6.25 * ud['height'] - 5 * ud['age']
 
-    l, f = ui.get_fields_len(arr )
-    # Для мужчин
-    if ud['sex'] in 'мМmM':
-        basic = (basic + 5)  * ud['activity']
-    # Для женщин
-    elif ud['sex'] in 'жЖfF':
-        basic = (basic - 161) * ud['activity']
+    try:
+        t_kcal = sum([line[2] for line in arr])
+        basic = 10 * ud['weight'] + 6.25 * ud['height'] - 5 * ud['age']
 
-    print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'норма калорий:'.upper(),  ' ' * f, l[1], ' ',  ' ' * f, l[2], basic, ' ' * f))
-    ui.print_as_table(arr,  ' ')
-    print() 
-    print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'Всего:'.upper(),  ' ' * f, l[1], ' ', ' ' * f, l[2], t_kcal, ' ' * f))
-    
+        #l, f = ui.get_fields_len(arr )
+        # Для мужчин
+        if ud['sex'] in 'мМmM':
+            basic = (basic + 5)  * ud['activity']
+        # Для женщин
+        elif ud['sex'] in 'жЖfF':
+            basic = (basic - 161) * ud['activity']
+
+    #print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'норма калорий:'.upper(),  ' ' * f, l[1], ' ',  ' ' * f, l[2], basic, ' ' * f))
+        sui.print_as_table(arr,  ' ')
+        print() 
+    #print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'Всего:'.upper(),  ' ' * f, l[1], ' ', ' ' * f, l[2], t_kcal, ' ' * f))
+    except IndexError:
+        print(f'No records at {current_date}')
  
 # Получаем данные пользователя из БД по его rowid
 
@@ -170,10 +170,10 @@ while True:
     # Получаем данные из дневника для нужного пользователя за текущее числоа
     diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date, user_rowid)).fetchall()
 
-    try:
-        print_diary(ud, diary)
-    except IndexError:
-        print(f'No records at {current_date}')
+    #try:
+    print_diary(ud, diary)
+    #except IndexError:
+    #    print(f'No records at {current_date}')
 
     # Выводим дневник и меню
     ui.menu(['add in diary', 'new in database','quit'], 2)
