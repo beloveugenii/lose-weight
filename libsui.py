@@ -2,7 +2,7 @@
 
 from os import get_terminal_size                       
 
-version = '0.0.1b'
+version = '0.0.1'
 screen_width = get_terminal_size()[0]
 line = '-' * screen_width
 

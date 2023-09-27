@@ -10,6 +10,9 @@ use lib "$Bin";
 require "libsport.pm";
 require "screen.pm";
 
+use libsui;
+
+
 our $NAME = 'simple-sport.pl';
 our $VERSION = '0.1.2';
 my $in_termux = 1 if $ENV{HOME} =~ /\/data.+/; 
@@ -72,13 +75,38 @@ else {
 # Создаем объект тренировок куда передаем ссылку на массив с файлами
 my $t = Training->new( \@ARGV );
 
-## Показываем стартовый экран, с программой упражнений и всеми данными
-Screen->header('Simple sport', [ grep {$_ = $t->get_option($_, 'name')} 0..$#ARGV ] );
+while ( 1 ) {
+    # Показываем стартовый экран, с программой упражнений и всеми данными
+    screen('Simple sport', 
+            sub { 
+                my @list = grep {$_ = $t->get_option($_, 'name')} 0..$#ARGV;
+                ## чкрез геттер можно узнать другие опции иипосчитать общую продллжкитеььность
+                print "$_\n" foreach @list;
+            }, 
+            ( 'start training', 'create new training', 'quit' ), 2 );
 
 ##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
-chomp ( my $entered = <STDIN> ); 
-exit 0 if $entered eq 'q';
 
+    my $choice = promt('>>');
+
+    if ( $choice =~ /^q$/i ){
+        exit 0
+    }
+    elsif ( $choice =~ /^s$/i ) {
+        print "Not implemented yet\n";
+        sleep 1;
+        last
+    }
+    elsif ( $choice =~ /^c$/i ) {
+        print "Not implemented yet\n";
+        sleep 1;
+    }
+
+    else {
+        print "Unsupported action\n";
+        sleep 1
+    }
+}
 
 ## Выключаем отображение курсора
 print "\033[?25l";
@@ -143,8 +171,8 @@ sub show_statistic {
                 $dur =  ( $dur >= 60 ) ? sprintf "%sм %sс", $dur / 60, $dur % 60 : sprintf "%sс", $dur;
         print "$ex: $dur\n" 
     }
-
-    printf "\nОбщее время: %sм %sс\n", $total / 60, $total % 60
+    my ($h, $m ,$s) = ($total / 3600, $total / 60, $total % 60);
+    ($h) ? printf "\nОбщее время: %sм %sс\n", $m, $s : printf "\nОбщее время: %sh %sм %sс\n", $h, $m, $s
 }
 
 
