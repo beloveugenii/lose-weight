@@ -2,32 +2,45 @@
 
 import sqlite3, datetime, readline
 from time import sleep
-import libui as ui
+from libsui import *
 
-# Регистрация клавиши `tab` для автодополнения
-readline.parse_and_bind('tab: complete')
+config_file_path = './config'
 
-def is_float(it):
-    # Функция аргумент - число или числововая строка
-    # Возвращает Истинну, если параметр - число с точкой
-    it = str(it)
-    if it.startswith('-'):
-        it = it[1:]
-    parts = it.split('.')
-    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
+def get_user_id(file):
+    try:
+        # Пытаемся получить номера активного пользователя из файла
+        f = open(file, 'r')
+        for line in f:
+            user_id = line.split('=')[1].strip()
+        f.close()
+    except FileNotFoundError:
+        user_id = None
+    return user_id
 
+def set_user_id(file, user_id):
+    f = open(file, 'a')
+    f.write('uid='+str(user_id)+'\n')
+    f.close()
+
+def get_calories_norm(user_data):
+
+    basic = 10 * user_data['weight'] + 6.25 * user_data['height'] - 5 * user_data['age']
+    # Для мужчин
+    if user_data['sex'] in 'мМmM':
+        return (basic + 5)  * user_data['activity']
+    # Для женщин
+    elif user_data['sex'] in 'жЖfF':
+        return(basic - 161) * user_data['activity']
+
+   
 def get_data(params, delay):
     data = dict()
-    # Функция последовательно запрашивает данные, переданные в первом параметрe
-    # Второй параметр - задержка в секундах между появлением сообщения о неверном вводе и новым приглашением на ввод
-    # Название любая не пустая строка, остальные параметры - натуральные или вещественные числа
-    # Возвращает словарь с данными
     for key in params:
         if key in ('title', 'name', 'sex'):
             while True:
-                it = ui.promt(params[key])
-                if len(it) < 1:
-                    print('Требуется строка')
+                it = promt(params[key])
+                if len(it) < 2 and not key == 'sex':
+                    print('Слишком короткая строка')
                     sleep(delay)
                 else:
                     if key == 'sex' and it not in 'мМжЖmMfF':
@@ -36,39 +49,50 @@ def get_data(params, delay):
                     else:
                         data[key] = it
                         break
-        elif key in ('kcal', 'age', 'height', 'weight', 'value'):
-            while True:
-                try:
-                    it = ui.promt(params[key])
-                    data[key] = float(it)
-                    break
-                except ValueError:
-                    print('Здесь требуется число')
-                    sleep(delay)
-        else:
+        elif key in ('kcal', 'age', 'height', 'weight', 'value', 'activity', 'p', 'c', 'f'):
             while True:
                 if key == 'activity':
                     print("1.2 – минимальная активность, сидячая работа, не требующая значительных физических нагрузок", "1.375 – слабый уровень активности: интенсивные упражнения не менее 20 минут один-три раза в неделю", "1.55 – умеренный уровень активности: интенсивная тренировка не менее 30-60 мин три-четыре раза в неделю", "1.7 – тяжелая или трудоемкая активность: интенсивные упражнения и занятия спортом 5-7 дней в неделю или трудоемкие занятия", "1.9 – экстремальный уровень: включает чрезвычайно активные и/или очень энергозатратные виды деятельности", sep='\n')
+
                 try:
-                    it = ui.promt(params[key])
+                    it = promt(params[key])
+
                     if it == '':
                         it = 1 if key == 'activity' else 0
+
                     data[key] = float(it)
                     break
                 except ValueError:
                     print('Здесь требуется число')
                     sleep(delay)
 
-
     return data
 
-def tup_to_dict(keys, values):
+def tuple_to_dict(keys, values):
     # Принимает два списка и строит из них словарь
     d = {}
     for i in range(len(keys)):
             d[keys[i]] = values[i]
     return d
+ 
+def validate(what, need_type):
+    ''''''
+    what = str(what)
 
+    def isfloat(what):
+        if what.startswith('-'):
+            what = what[1:]
+        parts = what.split('.')
+        return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
+
+    if need_type == 'int':
+        return what.isdigit()
+    elif need_type == 'float':
+        return isfloat(what)
+
+
+    else:
+        return 'Unsupported type'
 
 # Создаем подключение к БД и объект для работы с sql-запросами
 con = sqlite3.connect('fc.db')
@@ -79,120 +103,113 @@ cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f RE
 cur.execute("CREATE TABLE IF NOT EXISTS diary(user INT, date TEXT, title TEXT, value REAL)")
 cur.execute("CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)")
 
-try:
-    # Пытаемся получить номера активного пользователя
-    f = open("config", 'r')
-    for line in f:
-        user_rowid = line.split('=')[1].strip()
-    f.close()
-except FileNotFoundError:
-    while True:
-        # Экран выбора пользователя
-        ui.clear()
-        ui.header('Выбор пользователя')
-        for line in (cur.execute('SELECT rowid, name FROM users').fetchall()):
-            print("\t%d\t%s" % line)
-        ui.menu(['new user', 'user id', 'quit'], 2)
+user_id = get_user_id(config_file_path)
 
-        readline.set_completer(ui.cmpl(['n', 'q']).complete)
+readline.parse_and_bind('tab: complete')
 
-        act = ''
-        while len(act) == 0:
-            act = ui.promt('>>').strip()
-            
-        if act == 'n':
-            ud = get_data( {'name': 'ваше имя', 
+while user_id is None:
+    users = (cur.execute('SELECT rowid, name FROM users')).fetchall()
+    screen('Выбор пользователя', 
+           lambda: print_as_table(users, ' ') if users else print('No users found in database'),
+           ['new', 'quit'], 2)
+
+    readline.set_completer(completer([str(n[0]) for n in cur.execute('select rowid from users').fetchall()] + ['n', 'q']).complete)
+    choice = promt('>>').lower()
+    
+    if choice.isdigit():
+        user_id = int(choice)
+        set_user_id(config_file_path, user_id)
+    
+    elif choice.startswith('n'):
+        user_data = get_data( {'name': 'ваше имя', 
                       'sex': 'ваш пол', 
                       'age': 'ваш возраст', 
                       'height': 'ваш рост', 
                       'weight': 'ваш вес', 
                       'activity': 'ваша активность'}, 0)
 
-            cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", ud)
-            con.commit()
-        
-        elif act == 'q':
-            exit(0)
+        cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", user_data)
+        con.commit()
+     
+    elif choice.startswith('q'):
+        exit(0)
+    
+    else:
+        print('Unsupported action')
+        sleep(1)
+         
 
-        elif act.isdigit():
-        # Можно выбрать существующего, если ввести его номер
-            if int(act) in [ line[0] for line in cur.execute('SELECT rowid FROM users').fetchall()]:
-                user_rowid = act
-                f = open('config', 'a')
-                f.write('uid='+str(user_rowid)+'\n')
-                f.close()
-                break 
-            else:
-                print("Нет пользователя с таким номером")
-        else:
-            print('Выберите пользователя или создайте нового')
-            sleep(1)
-        
+user_data = tuple_to_dict( ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), 
+                         (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_id,)).fetchone()))
 
 current_date = datetime.date.today().strftime('%Y-%m-%d')
 
-def print_diary(ud, arr):
-    # Показывает содержимое дневника за ень
-    t_kcal = sum([line[2] for line in arr])
-    basic = 10 * ud['weight'] + 6.25 * ud['height'] - 5 * ud['age']
-
-    l, f = ui.get_fields_len(arr )
-    # Для мужчин
-    if ud['sex'] in 'мМmM':
-        basic = (basic + 5)  * ud['activity']
-    # Для женщин
-    elif ud['sex'] in 'жЖfF':
-        basic = (basic - 161) * ud['activity']
-
-    print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'норма калорий:'.upper(),  ' ' * f, l[1], ' ',  ' ' * f, l[2], basic, ' ' * f))
-    ui.print_as_table(arr,  ' ')
-    print() 
-    print('%s%-*s%s%-*s%s%*s%s' % (' ' * f, l[0], 'Всего:'.upper(),  ' ' * f, l[1], ' ', ' ' * f, l[2], t_kcal, ' ' * f))
-    
- 
-# Получаем данные пользователя из БД по его rowid
-
-ud = (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_rowid,)).fetchone())
-if len(ud) == 0:
-    print('В базе данных нет пользователей\nУдалите файл настроек и перезапустите программу')
-    exit(-1)
-
-ud = tup_to_dict(('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), ud)
-
-food_list = cur.execute("select title from food").fetchall()
 
 
 while True:
-    # Основной экран дневника питания
-    ui.clear()
-    ui.header('Дневник питания ' + current_date)
 
-    # Получаем данные из дневника для нужного пользователя за текущее числоа
-    diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date, user_rowid)).fetchall()
-
-    try:
-        print_diary(ud, diary)
-    except IndexError:
-        print(f'No records at {current_date}')
-
-    # Выводим дневник и меню
-    ui.menu(['add in diary', 'new in database','quit'], 2)
+    food_list = cur.execute("SELECT title FROM food").fetchall()
     
-    readline.set_completer(ui.cmpl(['a', 'n', 'q']).complete)
-    action = ui.promt('>>').strip()[0]
+    diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date, user_id)).fetchall()
     
-    if action in 'aA':
-        readline.set_completer(ui.cmpl([f[0] for f in food_list]).complete)
-        # Добавляем новое блюдо
-        n = get_data({'title': 'блюдо', 
-                      'value': 'количество'},1)
-        n['date'] = current_date
-        n['user'] = user_rowid
+    kcal_norm = get_calories_norm(user_data)
+    kcal_per_day = sum([line[2] for line in diary])
+    
+    screen('Дневник питания ' + current_date,
+                    lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
+                    ['new food type', 'previous entry', 'quit'], 2)
+    
+    readline.set_completer(completer([food[0] for food in food_list] + ['n', 'p', 'q']).complete)
+    
+    action = promt('>>').lower()
+    
+    if action.startswith('q'):
+        break
+    
+    elif action.startswith('p'):
+        print('Not implemented yet')
+        sleep(1)
+    
+    elif action.startswith('n'):
+        while True:
+
+            res = (cur.execute('select * from food')).fetchall()
+
+            screen('Внесение данных о новом продукте',
+                   lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print("No data in database yet"),
+                    ['add', 'remove', 'quit'], 3)
+
+            action = promt('>>').lower()
+
+            if action.startswith('a'):
+                d = get_data({'title': 'название',
+                       'kcal': 'калорийность', 
+                       'p': 'содержание белков', 
+                       'f': 'содержание жиров', 'c': 
+                       'содержание углеводов'}, 1)
+                cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
+                con.commit()
+
+            elif action.startswith('r'):
+                print('Not implemented yet')
+                sleep(1)
+            elif action.startswith('q'):
+                break
+            else:
+                print('Unsupported action')
+                sleep(1)
+                
         
-        # Пытаемся получить данные о введенном продукте из БД
-        res = (cur.execute("SELECT title, kcal FROM food WHERE title = :title", n)).fetchone()
+    
+    elif not (action.startswith('n') or action.startswith('q')) and len(action) > 3:
+
+        new_entry = {'title': action,
+                     'value': promt('количество'),
+                     'date': current_date,
+                     'user': user_id}
+
+        res = (cur.execute("SELECT title, kcal FROM food WHERE title = :title", new_entry)).fetchone()
         
-        # Если данных нет, то запрашиваем их у пользователя
         if res is None:
             print('Похоже, что такого блюда нет в базе\nТребуется ввод дополнительной инофрмации')
             
@@ -202,41 +219,14 @@ while True:
                           'f': 'содержание жиров',
                           'c': 'содержание углеводов'}, 1)
             
-            d['title'] = n['title']
+            d['title'] = new_entry['title']
 
             cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
             con.commit()
-            # Получаем данные о новом продукте
-            res = cur.execute("SELECT title, kcal FROM food WHERE title = :title", n)
         
         # Добавляем запись в дневник
-        cur.execute("INSERT INTO diary VALUES(:user, :date, :title, :value)",  n)
+        cur.execute("INSERT INTO diary VALUES(:user, :date, :title, :value)", new_entry)
         con.commit()
-    elif action in 'nN':
-        # Добавляем новый продукт в БД
-        d = get_data({'title': 'название',
-                      'kcal': 'калорийность', 
-                        'p': 'содержание белков', 
-                        'f': 'содержание жиров', 'c': 
-                        'содержание углеводов'}, 1)
-
-        cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
-        con.commit()
-
-    elif action in 'pP':
-        pass
-        current_date = datetime.date.today().strftime('%Y-%m-%d')
-    
-
-    elif action in 'qQ':
-        con.close()
-        exit(0)
     else:
-        print('Неизвестная команда')
+        print("Unsupported action")
         sleep(1)
-
-
-    
-
-
-
