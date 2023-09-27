@@ -153,7 +153,7 @@ while True:
     diary = cur.execute("SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date, user_id)).fetchall()
     
     kcal_norm = get_calories_norm(user_data)
-    kcal_per_day = sum([line[2] for line in diary])
+    kcal_per_day = '%.1f' % sum([line[2] for line in diary])
     
     screen('Дневник питания ' + current_date,
                     lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),

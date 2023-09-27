@@ -79,8 +79,11 @@ while ( 1 ) {
     # Показываем стартовый экран, с программой упражнений и всеми данными
     screen('Simple sport', 
             sub { 
-                #menu ( grep {$_ = $t->get_option($_, 'name')} 0..$#ARGV, 2 )  }
-            }, qw /start quit/, 2 );
+                my @list = grep {$_ = $t->get_option($_, 'name')} 0..$#ARGV;
+                ## чкрез геттер можно узнать другие опции иипосчитать общую продллжкитеььность
+                print "$_\n" foreach @list;
+            }, 
+            ( 'start training', 'create new training', 'quit' ), 2 );
 
 ##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
 
@@ -94,6 +97,11 @@ while ( 1 ) {
         sleep 1;
         last
     }
+    elsif ( $choice =~ /^c$/i ) {
+        print "Not implemented yet\n";
+        sleep 1;
+    }
+
     else {
         print "Unsupported action\n";
         sleep 1

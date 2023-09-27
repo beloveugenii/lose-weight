@@ -15,7 +15,7 @@ my $line = '-' x $screen_width . "\n";
 
 sub clear {
     # clears the screen
-    print "\033[2J\033[H\n" 
+    print "\033[2J\033[H" 
 }
 
 sub promt {
