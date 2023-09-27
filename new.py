@@ -14,26 +14,22 @@ cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f RE
 cur.execute("CREATE TABLE IF NOT EXISTS diary(user INT, date TEXT, title TEXT, value REAL)")
 cur.execute("CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)")
 
-try:
-    # Пытаемся получить номера активного пользователя
-    f = open("config", 'r')
-    for line in f:
-        user_rowid = line.split('=')[1].strip()
+def get_user_id():
+    try:
+        # Пытаемся получить номера активного пользователя из файла
+        f = open("config", 'r')
+        for line in f:
+            user_id = line.split('=')[1].strip()
+        f.close()
+    except FileNotFoundError:
+        user_id = None
+    return user_id
+
+def set_user_id(user_id):
+    f = open('config', 'a')
+    f.write('uid='+str(user_id)+'\n')
     f.close()
-except FileNotFoundError:
-
-# Регистрация клавиши `tab` для автодополнения
-readline.parse_and_bind('tab: complete')
-
-def is_float(it):
-    # Функция аргумент - число или числововая строка
-    # Возвращает Истинну, если параметр - число с точкой
-    it = str(it)
-    if it.startswith('-'):
-        it = it[1:]
-    parts = it.split('.')
-    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
-
+        
 def get_data(params, delay):
     data = dict()
     # Функция последовательно запрашивает данные, переданные в первом параметрe
@@ -79,6 +75,59 @@ def get_data(params, delay):
 
 
     return data
+
+
+def add_new_user():
+    # имя, пол, возраст, рост, вес, активность
+    pass
+
+
+
+user_id = get_user_id()
+
+while user_id is None:
+    choice = sui.screen(
+                'Выбор пользователя', 
+                lambda: sui.print_as_table(cur.execute('SELECT rowid, name FROM users').fetchall(), ' '),
+                [str(n[0]) for n in cur.execute('select rowid from users').fetchall()] + ['new', 'quit'], 2)
+
+    if choice.isnumeric():
+        user_id = int(choice)
+        set_user_id(user_id)
+    
+    elif choice.startswith('n'):
+        user_data = get_data( {'name': 'ваше имя', 
+                      'sex': 'ваш пол', 
+                      'age': 'ваш возраст', 
+                      'height': 'ваш рост', 
+                      'weight': 'ваш вес', 
+                      'activity': 'ваша активность'}, 0)
+
+        cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", user_data)
+        con.commit()
+     
+    elif choice.startswith('q'):
+        exit(0)
+    
+    else:
+        print('Unknown command')
+         
+
+print(user_id)
+
+pass
+
+# Регистрация клавиши `tab` для автодополнения
+readline.parse_and_bind('tab: complete')
+
+def is_float(it):
+    # Функция аргумент - число или числововая строка
+    # Возвращает Истинну, если параметр - число с точкой
+    it = str(it)
+    if it.startswith('-'):
+        it = it[1:]
+    parts = it.split('.')
+    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
 
 def tup_to_dict(keys, values):
     # Принимает два списка и строит из них словарь
@@ -152,7 +201,7 @@ def print_diary(ud, arr):
         print(f'No records at {current_date}')
  
 # Получаем данные пользователя из БД по его rowid
-
+user_rowid = ''
 ud = (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_rowid,)).fetchone())
 if len(ud) == 0:
     print('В базе данных нет пользователей\nУдалите файл настроек и перезапустите программу')
