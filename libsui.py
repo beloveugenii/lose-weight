@@ -1,36 +1,10 @@
 # libsui.py
 
 from os import get_terminal_size                       
-import readline
 
 version = '0.0.1b'
 screen_width = get_terminal_size()[0]
 line = '-' * screen_width
-
-class completer():
-    def __init__(self, options):
-        self.options = sorted(options)
-        return
-
-    def complete(self, text, state):
-        response = None
-        if state == 0:
-            # Создание списка соответствий.
-            if text:
-                # если какой то текст есть, то вернуть список слов из списка, которые начинаются на текст
-                self.matches = [s 
-                    for s in self.options
-                    if s and s.startswith(text)]
-            else:
-                # или вернуть весь список
-                self.matches = self.options[:]
-        # Вернуть элемент состояния из списка совпадений, 
-        # если их много. 
-        try:
-            response = self.matches[state]
-        except IndexError:
-            response = None
-        return response
 
 def clear():
     # clears the screen
@@ -42,13 +16,12 @@ def promt(what):
     # return gived string in looks 'String: '
     return input(what[0].upper() + what[1:] + ': ')
 
-
 def get_fields_len(array):
     # takes a list of tuples
     fields = []
 
     # defines the number of rows and columns
-    rows =len(array)
+    rows = len(array)
     try:
         cols =  max([len(col) for col in array])
     except ValueError:
@@ -111,10 +84,6 @@ def menu(array, cols):
     print_as_table(menu_lst, ' ')
     print(line)
 
-def psb(text):
-    print('body of', text)
-
-
 def screen(header_title, func, menu_lst, menu_cols):
     # takes a list with header text, some function, menu list and number of menu columns
     # clear the screen and prints header, output of body function and menu
@@ -123,43 +92,28 @@ def screen(header_title, func, menu_lst, menu_cols):
     func()
     menu(menu_lst, menu_cols)
 
-    ch = ''
+class completer():
+    def __init__(self, options):
+        self.options = sorted(options)
+        return
 
-    readline.parse_and_bind('tab: complete')
-    readline.set_completer(completer([w[0] for w in menu_lst]).complete)
-    
-    while True:
-        ch = promt('>>')[0]
-        if ch not in [w[0] for w in menu_lst]:
-            print('Unknown command')
-        else:
-            break
-    # return one of menu elements
-    return [w for w in menu_lst if w.startswith(ch)][0]
-
-
-def loop(data_dict):
-    # takes a dict, where keys are screen names and values are lists with header, body func, menu items and menu columns
-
-    # prints screens in cycle
-    screens = ['main']
-    while screens:
-        rv = screen(*data_dict[screens[-1]])
-        print(rv)
-        screens.append(rv)
-
-        if screens[-1] in ('back', 'quit'):
-            for _ in range(2):
-                screens.pop()
-
-def demo():
-    # some little demonstration
-    loop( { 'main': ['main screen', psb, ['first', 'second', 'quit'], 2],
-         'first': ['first screen', psb, ['next_first', 'quit'], 2],
-         'second': ['second screen', psb, ['next_second', 'quit'], 2],
-         'next_first': ['next_first screen', psb, ['quit'], 2],
-         'next_second': ['next_second screen', psb, ['quit'], 2],
-        }
-    )
-
+    def complete(self, text, state):
+        response = None
+        if state == 0:
+            # Создание списка соответствий.
+            if text:
+                # если какой то текст есть, то вернуть список слов из списка, которые начинаются на текст
+                self.matches = [s 
+                    for s in self.options
+                    if s and s.startswith(text)]
+            else:
+                # или вернуть весь список
+                self.matches = self.options[:]
+        # Вернуть элемент состояния из списка совпадений, 
+        # если их много. 
+        try:
+            response = self.matches[state]
+        except IndexError:
+            response = None
+        return response
 
