@@ -27,10 +27,10 @@ def get_calories_norm(user_data):
     basic = 10 * user_data['weight'] + 6.25 * user_data['height'] - 5 * user_data['age']
     # Для мужчин
     if user_data['sex'] in 'мМmM':
-        return (basic + 5)  * user_data['activity']
+        return str((basic + 5)  * user_data['activity'])[:-1]
     # Для женщин
     elif user_data['sex'] in 'жЖfF':
-        return(basic - 161) * user_data['activity']
+        return str((basic - 161) * user_data['activity'])[:-1]
 
    
 def get_data(params, delay):
@@ -150,7 +150,7 @@ while True:
 
     food_list = cur.execute("SELECT title FROM food").fetchall()
     
-    diary = cur.execute("SELECT d.title, value, f.kcal * (d.value / 100) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date, user_id)).fetchall()
+    diary = cur.execute("SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date, user_id)).fetchall()
     
     kcal_norm = get_calories_norm(user_data)
     kcal_per_day = sum([line[2] for line in diary])
@@ -173,7 +173,7 @@ while True:
     elif action.startswith('n'):
         while True:
 
-            res = (cur.execute('select * from food')).fetchall()
+            res = (cur.execute('select title, cast(kcal as int), cast(p as int), cast(f as int), cast(c as int) from food')).fetchall()
 
             screen('Внесение данных о новом продукте',
                    lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print("No data in database yet"),
