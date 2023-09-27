@@ -12,12 +12,10 @@ require "screen.pm";
 
 use libsui;
 
-
 our $NAME = 'simple-sport.pl';
 our $VERSION = '0.1.2';
 my $in_termux = 1 if $ENV{HOME} =~ /\/data.+/; 
 my $statistic = {};
-
 
 # Ключи для аргументов КС
 our ( $opt_h, $opt_v, $opt_s, $opt_t);
@@ -34,12 +32,12 @@ empty_start() unless @ARGV;
 
 # Если мы находимся в среде Termux
 if ( $in_termux && $opt_s ) {
-    my $termux = "$ENV{HOME}/.termux/termux.properties";
-    my $backup = $termux . '.bak';
+    my $termux_config = "$ENV{HOME}/.termux/termux.properties";
+    my $backup = $termux_config . '.bak';
 
     # Изменяем настройки Termux
-    rename $termux, $backup or die "$!";
-    open my $new_file, '>', $termux;
+    rename $termux_config, $backup or die "$!";
+    open my $new_file, '>', $termux_config;
     open my $old_file, '<', $backup;
     # Читаем файл резервной копии и одновременно записываем данные оттуда в новый файл. 
     # Когда будет найдена строка с 'beep' она будет изменена и записана в новом виде
@@ -53,7 +51,7 @@ if ( $in_termux && $opt_s ) {
 
     # Устанавливаем обработчик прерывания
     $SIG{INT} = sub {
-        rename $backup, $termux if -e $backup;
+        rename $backup, $termux_config if -e $backup;
         system 'termux-reload-settings';
         print "\033[2J\033[H\033[?25h\n";
         show_statistic($statistic);
@@ -77,15 +75,21 @@ my $t = Training->new( \@ARGV );
 
 while ( 1 ) {
     # Показываем стартовый экран, с программой упражнений и всеми данными
-    screen('Simple sport', 
+    screen('Программа тренировки', 
             sub { 
-                my @list = grep {$_ = $t->get_option($_, 'name')} 0..$#ARGV;
-                ## чкрез геттер можно узнать другие опции иипосчитать общую продллжкитеььность
-                print "$_\n" foreach @list;
+                my $program;
+                foreach my $index (0..$#ARGV) {
+                      $program->[$index][0] = $t->get_option($index, 'name');
+                      {
+                          use integer;
+                          $program->[$index][1] += $_->[1] foreach ( @{$t->get_option($index, 'data')});
+                          $program->[$index][1] = sprintf '%sm %ss', $program->[$index][1] / 60, $program->[$index][1] % 60;
+                      }
+                }
+
+                print_as_table($program, ' ');
             }, 
             ( 'start training', 'create new training', 'quit' ), 2 );
-
-##ПОКАЗАТЬ ДАННЫЕ О ПОДХОДАХ ПАУЗАХ И ТП
 
     my $choice = promt('>>');
 
