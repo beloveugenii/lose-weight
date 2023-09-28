@@ -4,6 +4,6 @@ relax=1s
 repeats=2
 on_end=1s
 
-ex1:3s
+ex1:232
 ex2:2s
 ex3:1s
