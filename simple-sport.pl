@@ -8,7 +8,6 @@ use Time::HiRes qw / time sleep /;
 use Getopt::Std;
 use lib "$Bin";
 require "libsport.pm";
-
 use libsui;
 
 our $NAME = 'simple-sport.pl';
@@ -110,7 +109,6 @@ while ( 1 ) {
         exit 0
     }
     elsif ( $choice =~ /^s$/i ) {
-        print "Not implemented yet\n";
         sleep 1;
         last
     }
@@ -128,7 +126,6 @@ while ( 1 ) {
 # hide the cursor and clears the screen
 print "\033[?25l";
 clear();
-
 
 foreach my $file_index ( 0..$#ARGV ) {
     
