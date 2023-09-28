@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sqlite3, datetime, readline
+import sqlite3, datetime, readline, os
 from time import sleep
 from libsui import *
 
@@ -157,9 +157,9 @@ while True:
     
     screen('Дневник питания ' + current_date,
                     lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
-                    ['new food type', 'previous entry', 'quit'], 2)
+                    ['new food type', 'previous entry', 'trainings', 'quit'], 2)
     
-    readline.set_completer(completer([food[0] for food in food_list] + ['n', 'p', 'q']).complete)
+    readline.set_completer(completer([food[0] for food in food_list] + ['n', 'p', 't', 'q']).complete)
     
     action = promt('>>').lower()
     
@@ -169,6 +169,9 @@ while True:
     elif action.startswith('p'):
         print('Not implemented yet')
         sleep(1)
+
+    elif action.startswith('t'):
+        os.system('./simple-sport.pl ./basics/test')
     
     elif action.startswith('n'):
         while True:
