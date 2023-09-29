@@ -7,11 +7,11 @@ use FindBin qw / $Bin /;
 use Time::HiRes qw / time sleep /;
 use Getopt::Std;
 use lib "$Bin";
-require "libsport.pm";
+require "libsassist.pm";
 use libsui;
 
-our $NAME = 'simple-sport.pl';
-our $VERSION = '0.1.3';
+our $NAME = 's_assist.pl';
+our $VERSION = '0.1.4a';
 my $in_termux = 1 if $ENV{HOME} =~ /\/data.+/; 
 my $statistic = {};
 my %nums = ( 
@@ -29,13 +29,15 @@ my %nums = (
     );
 
 # Command-line keys
-our ( $opt_h, $opt_v, $opt_s, $opt_t);
+our ( $opt_h, $opt_v, $opt_s, $opt_t, $opt_i);
 
 # Check command-line options and handle it 
-getopts( 'vhst' );
+getopts( 'vhsti' );
 help() if $opt_h;
 version() if $opt_v;
 timer( $ARGV[0] ) if $opt_t;
+@ARGV = interactive() if $opt_i;
+
 
 # Remove bad files and handle empty start
 @ARGV = grep -e, @ARGV;
@@ -78,8 +80,7 @@ else {
 }
 
 
-
-# Constract training list
+# Construct training list
 my $t = Training->new( \@ARGV );
 
 while ( 1 ) {
@@ -234,21 +235,65 @@ sub timer {
     }
 }
 
+sub interactive {
+    # Interactive mode handler
+    # It enables then program starts from parent process with '-i' option
+    clear();
+    header('Выберите упражнения');
+
+    my ($num, $tmp) = (1, []);
+    my @files = glob "./basics/*";
+
+    foreach my $file ( @files ) {
+        my ( $name ) = ( '' );
+        open my $fh, "<", $file;
+        
+        while (<$fh>){
+            if ( /^name=(.+)/ ) {
+                $name = $1;
+            }
+            last if $name;
+        }
+        
+        close $fh;
+        push @$tmp, ['[' . $num++ . ']', $name];
+    }
+
+    print_as_table($tmp, ' ');
+    @$tmp = ();
+    line();
+
+    my @nums;
+    while ( ! @nums ) {
+        my $i = promt('>>');
+        exit 0 if $i =~ /.*q.*/i;
+
+        @nums = split ' ', $i; 
+    }
+
+    push @$tmp, $files[$_ - 1] foreach ( @nums );
+    @$tmp
+}
+
+
 # POD
 
 =encoding utf8
 
 =head3 Name
 
-Simple-sport - minimalistic console sport assistant
+s_assist - minimalistic console sport assistant. It is part of fcracher
+
 
 =head3 Synopsis
 
-Usage: simple-sport [OPTIONS] [FILE]
+Usage: ./s_assist.pl [OPTIONS] [FILE]
+
 
 =head3 Description
 
-This program will help you to do sport everytime and everythere: the program reads the files transferred to it and makes a list of exercises from them. The duration of pauses between exercises and repetitions, as well as the number of repetitions can be passed to the program as options (see below).
+The sports assistant allows you to create training programs and carry them out according to a timer. For creating new training file you can use every text editor you like. See *File format* section below.
+
 
 =head3 Options
 
@@ -256,6 +301,8 @@ This program will help you to do sport everytime and everythere: the program rea
     -t [exercise] make timer on
     -v show version of app
     -h show embedded help
+    -i interactive file choosing
+
 
 =head3 File format
 
@@ -266,6 +313,7 @@ The grid symbol ( # ) is used to create comments, empty lines will skip.
 The execution time must be specified with a time modifier (s or m), the separator for the exercises is either a colon symbol ( : ) or a small arrow ( -E<gt> ).
 
 The same principle is used to set parameters, but the separator is the equality symbol ( = ). If the parameter is set by a simple number, like the number of approaches, then the time modifier cannot be set.
+
 
 =head3 Example
 

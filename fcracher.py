@@ -4,7 +4,10 @@ import sqlite3, datetime, readline, os
 from time import sleep
 from libsui import *
 
-config_file_path = './config'
+CONFIG_FILE_PATH = './config'
+VERSION = '0.1.4.a'
+NAME = 'fcrasher.py';
+DB_NAME = 'fc.db'
 
 def get_user_id(file):
     try:
@@ -95,7 +98,7 @@ def validate(what, need_type):
         return 'Unsupported type'
 
 # Создаем подключение к БД и объект для работы с sql-запросами
-con = sqlite3.connect('fc.db')
+con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
 
 # Создаем таблицы с данными о продуктах, дневник питания и о пользователе
@@ -103,7 +106,7 @@ cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f RE
 cur.execute("CREATE TABLE IF NOT EXISTS diary(user INT, date TEXT, title TEXT, value REAL)")
 cur.execute("CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)")
 
-user_id = get_user_id(config_file_path)
+user_id = get_user_id(CONFIG_FILE_PATH)
 
 readline.parse_and_bind('tab: complete')
 
@@ -118,7 +121,7 @@ while user_id is None:
     
     if choice.isdigit():
         user_id = int(choice)
-        set_user_id(config_file_path, user_id)
+        set_user_id(CONFIG_FILE_PATH, user_id)
     
     elif choice.startswith('n'):
         user_data = get_data( {'name': 'ваше имя', 
@@ -171,7 +174,7 @@ while True:
         sleep(1)
 
     elif action.startswith('t'):
-        os.system('./simple-sport.pl ./basics/test')
+        os.system('./s_assist.pl -i')
     
     elif action.startswith('n'):
         while True:
