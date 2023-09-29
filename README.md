@@ -5,7 +5,7 @@ Fcrasher - is a small console utility that contains a food diary for calorie tra
 
 ### Synopsis
 
-Usage: ./fcracher.py
+Usage: ./fcrasher.py
 
 or
 
