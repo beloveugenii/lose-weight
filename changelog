@@ -119,12 +119,12 @@ v0.1.4a
 Переименование
 	- simple-sport.pl -> s_assist.pl
 	- libsport.pm -> libsassist.pm
-	- diary.py -> fcracher.py
+	- diary.py -> fcrasher.py
 
 S_assist
 	- добавлен режим интерактивного выбора файлов тренировок
 	- запуск с аругментами из КС сохранен
 
-Fcracher
+Fcrasher
 	- s_assist может быть запущен с основного экрана в интерактивном режиме
 	- небольшой рефакторинг
