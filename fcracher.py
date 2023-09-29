@@ -174,7 +174,7 @@ while True:
         sleep(1)
 
     elif action.startswith('t'):
-        os.system('./s_assist.pl -i')
+        os.system('perl ' + os.path.dirname(__file__) + '/s_assist.pl -i')
     
     elif action.startswith('n'):
         while True:
