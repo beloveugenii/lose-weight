@@ -6,7 +6,7 @@ use open qw /:std :utf8 /;
 use Term::ReadKey qw / GetTerminalSize /;
 use base qw / Exporter /;
 
-our @EXPORT = qw / clear promt print_as_table header menu screen /;
+our @EXPORT = qw / clear promt line print_as_table header menu screen /;
 
 our $version = '0.0.1';
 
@@ -16,6 +16,10 @@ my $line = '-' x $screen_width . "\n";
 sub clear {
     # clears the screen
     print "\033[2J\033[H" 
+}
+sub line {
+    # prints line
+    print $line;
 }
 
 sub promt {
@@ -137,7 +141,7 @@ Each hash element must contain an arrayref with data to create a screen: the tit
 
 =head1 DEPENDENCIES
 
-Term::ReadKey and Term::Completion
+Term::ReadKey 
 
 
 =head1 AUTHOR

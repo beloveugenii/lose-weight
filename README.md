@@ -1,24 +1,35 @@
 
 ### Name
 
-Simple-sport - minimalistic console sport assistant with calorie diary.
+Fcrasher - is a small console utility that contains a food diary for calorie tracking and a sports assistant.
 
 ### Synopsis
 
-Usage: ./simple-sport.pl [OPTIONS] [FILE]
+Usage: ./fcracher.py
 
-Usage: ./diary.py
+or
+
+Usage: ./s\_assist.pl [files]
 
 ### Description
 
-This program will help you to do sport everytime and everythere: the program reads the files transferred to it and makes a list of exercises from them. The duration of pauses between exercises and repetitions, as well as the number of repetitions is indicated in the file with workout plan.
+A food diary allows you to track the amount you eat during the day. It calculates your daily calorie intake and the caloric value of all foods eaten. Food diary uses SQLite to store its data.
 
-### Options of simple-sport
+The sports assistant allows you to create training programs and carry them out according to a timer. For creating new training file you can use every text editor you like. See *File format* section below.
+
+### Dependencies
+
+- SQLite
+- DBI
+- DBD::SQLite
+
+### Options of s\_assist
 
     -s enables a sound alarm when executing
     -t [exercise] make timer on
     -v show version of app
     -h show embedded help
+    -i interactive file choosing
 
 ### File format
 
@@ -41,6 +52,3 @@ The same principle is used to set parameters, but the separator is the equality 
     ex3->40s
     ex5:1m
 
-### About diary.py
-
-Diary.py is a small interactive script that allows you to keep a calorie diary. It uses SQLite to store a diary and product data that requires the installation of this utility.
