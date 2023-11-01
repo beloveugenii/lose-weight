@@ -145,42 +145,42 @@ while user_id is None:
 user_data = tuple_to_dict( ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), 
                          (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_id,)).fetchone()))
 
-current_date = datetime.date.today().strftime('%Y-%m-%d')
-
-
+current_date = datetime.date.today()
 
 while True:
-
+    clear()
     food_list = cur.execute("SELECT title FROM food").fetchall()
     
-    diary = cur.execute("SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date, user_id)).fetchall()
+    diary = cur.execute("SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date.strftime('%Y-%m-%d'), user_id)).fetchall()
     
     kcal_norm = get_calories_norm(user_data)
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
     
-    screen('Дневник питания ' + current_date,
+    screen('Дневник питания ' + current_date.strftime('%Y-%m-%d'),
                     lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
-                    ['new food type', 'previous entry', 'trainings', 'quit'], 2)
+           ['add new food type', 'previous entry', 'next entry', 'trainings', 'quit'], 2)
     
-    readline.set_completer(completer([food[0] for food in food_list] + ['n', 'p', 't', 'q']).complete)
+    readline.set_completer(completer([food[0] for food in food_list] + ['a', 'p', 'n', 't', 'q']).complete)
     
-    action = promt('>>').lower()
+    action = promt('>>').lower().strip()
     
     if action.startswith('q'):
         break
     
     elif action.startswith('p'):
-        print('Not implemented yet')
-        sleep(1)
+        current_date -= datetime.timedelta(days = 1)
 
+    elif action.startswith('n'):
+        current_date += datetime.timedelta(days = 1)
+    
     elif action.startswith('t'):
 
         os.system('perl ' + os.path.dirname(__file__) + '/s_assist.pl -i')
 
     
-    elif action.startswith('n'):
+    elif action.startswith('a'):
         while True:
-
+            clear()
             res = (cur.execute('select title, cast(kcal as int), cast(p as int), cast(f as int), cast(c as int) from food')).fetchall()
 
             screen('Внесение данных о новом продукте',
