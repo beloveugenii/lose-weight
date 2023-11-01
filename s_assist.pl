@@ -91,12 +91,11 @@ while ( 1 ) {
                 foreach my $index ( 0..$#ARGV ) {
                     $program->[$index][0] = $program->[$index][0] = $t->get_option($index, 'name');
                     {
-                        use integer;
                         $program->[$index][1] += $_->[1] foreach ( @{$t->get_option($index, 'data')});
 
                         $program->[$index][1] *= $t->get_option($index, 'repeats');
 
-                        $program->[$index][1] = sprintf '%sm %ss', $program->[$index][1] / 60, $program->[$index][1] % 60;
+                        $program->[$index][1] = sec_to_hours($program->[$index][1]);
                     }
                 }
 
@@ -142,6 +141,7 @@ foreach my $file_index ( 0..$#ARGV ) {
         for ( my $index = 0; $index <= $#$list; $index++ )  {
 
             my ( $ex, $duration ) = (@{$list->[$index]});
+
             header( "$name $repeat / $repeats" );
 
             # Prints title and duration for each exercise and name of next exercise
@@ -155,11 +155,14 @@ foreach my $file_index ( 0..$#ARGV ) {
                 
                 # Sound signal if enabled
                 print "\a" if ( $timer < 3 || $timer == int ( $duration / 2 ) );
-                $statistic->{$ex}++ if $timer != 0;
+                #$statistic->{$ex}++ if $timer != 0;
 
                 print_big_nums( $timer );
                 sleep 1;
             }
+
+            $statistic->{$ex} += $duration;
+            
             # lears the screen
             clear();
             sleep 0.25;
@@ -177,18 +180,33 @@ sub show_statistic {
     my $total = 0;
     clear();
     header('Статистика тренировки');
-    use integer;
     while ( my ($ex, $dur) = each %$hashref ) {
         next if $ex eq 'Пауза' ||
                 $ex eq 'Конец тренировки' || 
                 $ex eq 'Время отдохнуть' || 
                 $ex eq 'Приготовьтесь';
-                $total += $dur;
-                $dur =  ( $dur >= 60 ) ? sprintf "%sм %sс", $dur / 60, $dur % 60 : sprintf "%sс", $dur;
-        print "$ex: $dur\n" 
+        $total += $dur;
+        print "$ex: " . sec_to_hours($dur) . "\n"; 
     }
-    my ( $h, $m ,$s ) = ( $total / 3600, $total / 60, $total % 60 );
-    ( $h ) ? printf "\nОбщее время: %sч %sм %sс\n", $h, $m, $s : printf "\nОбщее время: %sм %sс\n", $m, $s;
+
+    print "\nОбщее время: " . sec_to_hours($total) . "\n";
+}
+
+sub sec_to_hours {
+    my ( $timer, $h, $m, $s ) = ( shift, undef, undef, undef );
+
+    use integer;
+    
+    while ($timer >= 3600) {
+        $h++;
+        $timer -= 3600; 
+    }
+
+    ( $m, $s ) = ( $timer / 60, $timer % 60 );
+
+    ( $h ) ? sprintf "%dч %dм %dс", $h, $m, $s : 
+             sprintf "%dм %dс", $m, $s;
+
 }
 
 sub print_big_nums {
