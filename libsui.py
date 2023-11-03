@@ -8,7 +8,7 @@ line = '-' * screen_width
 
 def clear():
     # clears the screen
-    print('\033[2J\033[H', end='')
+    print('\033[H\033[2J', end='')
 
 def promt(what):
     # takes a string
