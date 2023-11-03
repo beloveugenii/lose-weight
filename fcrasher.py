@@ -2,10 +2,11 @@
 
 import sqlite3, datetime, readline, os
 from time import sleep
+import signal
 from libsui import *
 
 CONFIG_FILE_PATH = './config'
-VERSION = '0.1.4.a'
+VERSION = '0.1.5'
 NAME = 'fcrasher.py';
 DB_NAME = 'fc.db'
 
@@ -71,8 +72,15 @@ def get_data(params, delay):
 
     return data
 
+# Обработчик нажатия Ctrl-C
+def sigint_handler(signum, frame):
+    signame = signal.Signals(signum).name
+    clear()
+    print(f'Catched {signame}')
+    exit(1)
+
 def tuple_to_dict(keys, values):
-    # Принимает два списка и строит из них словарь
+    '''Takes two lists and builds a dict from them, where the elements of the first list become keys, and the elements of the second become values'''
     d = {}
     for i in range(len(keys)):
             d[keys[i]] = values[i]
@@ -92,10 +100,13 @@ def validate(what, need_type):
         return what.isdigit()
     elif need_type == 'float':
         return isfloat(what)
-
-
     else:
         return 'Unsupported type'
+
+# Enable SIG handlers and configure readline
+signal.signal(signal.SIGINT, sigint_handler)
+
+readline.set_completer_delims('\n')
 
 # Создаем подключение к БД и объект для работы с sql-запросами
 con = sqlite3.connect(DB_NAME)
@@ -108,16 +119,18 @@ cur.execute("CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, heig
 
 user_id = get_user_id(CONFIG_FILE_PATH)
 
-readline.parse_and_bind('tab: complete')
-
 while user_id is None:
     users = (cur.execute('SELECT rowid, name FROM users')).fetchall()
     screen('Выбор пользователя', 
            lambda: print_as_table(users, ' ') if users else print('No users found in database'),
            ['new', 'quit'], 2)
 
+    # Enable tab-completion
+    readline.parse_and_bind('tab: complete')
+
     readline.set_completer(completer([str(n[0]) for n in cur.execute('select rowid from users').fetchall()] + ['n', 'q']).complete)
-    choice = promt('>>').lower()
+
+    choice = promt('>>').lower().strip()
     
     if choice.isdigit():
         user_id = int(choice)
@@ -133,7 +146,7 @@ while user_id is None:
 
         cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", user_data)
         con.commit()
-     
+
     elif choice.startswith('q'):
         exit(0)
     
@@ -158,10 +171,12 @@ while True:
     
     screen('Дневник питания ' + current_date.strftime('%Y-%m-%d'),
                     lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
-           ['add new food type', 'previous entry', 'next entry', 'trainings', 'quit'], 2)
+           ['list of food', 'previous entry', 'next entry', 'trainings', 'quit'], 2)
     
-    readline.set_completer(completer([food[0] for food in food_list] + ['a', 'p', 'n', 't', 'q']).complete)
-    
+    # Enable tab-completion
+    readline.parse_and_bind('tab: complete')
+    readline.set_completer(completer([food[0] for food in food_list] + ['l', 'p', 'n', 't', 'q']).complete)
+
     action = promt('>>').lower().strip()
     
     if action.startswith('q'):
@@ -174,22 +189,30 @@ while True:
         current_date += datetime.timedelta(days = 1)
     
     elif action.startswith('t'):
-
         os.system('perl ' + os.path.dirname(__file__) + '/s_assist.pl -i')
 
-    
-    elif action.startswith('a'):
+    elif action.startswith('l'):
         while True:
             clear()
-            res = (cur.execute('select title, cast(kcal as int), cast(p as int), cast(f as int), cast(c as int) from food')).fetchall()
+            res = sorted((cur.execute('select title, cast(kcal as int), cast(p as int), cast(f as int), cast(c as int) from food')).fetchall())
+
+            # Disable tab-completion
+            readline.parse_and_bind('tab: \t')
 
             screen('Внесение данных о новом продукте',
                    lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print("No data in database yet"),
-                    ['add', 'remove', 'quit'], 3)
+                    ['remove', 'quit'], 2)
 
-            action = promt('>>').lower()
+            action = promt('>>').lower().strip()
 
-            if action.startswith('a'):
+            if action.startswith('q'):
+                break
+
+            elif action.startswith('r'):
+                print('Not implemented yet')
+                sleep(1)
+            
+            elif not (action.startswith('r') or action.startswith('q')) and len(action) > 3:
                 d = get_data({'title': 'название',
                        'kcal': 'калорийность', 
                        'p': 'содержание белков', 
@@ -198,18 +221,11 @@ while True:
                 cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
                 con.commit()
 
-            elif action.startswith('r'):
-                print('Not implemented yet')
-                sleep(1)
-            elif action.startswith('q'):
-                break
             else:
                 print('Unsupported action')
                 sleep(1)
                 
-        
-    
-    elif not (action.startswith('n') or action.startswith('q')) and len(action) > 3:
+    elif not (action.startswith('l') or action.startswith('q')) and len(action) > 3:
 
         new_entry = {'title': action,
                      'value': promt('количество'),
