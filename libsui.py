@@ -1,6 +1,7 @@
 # libsui.py
 
 from os import get_terminal_size                       
+#from readline import *
 
 version = '0.0.1'
 screen_width = get_terminal_size()[0]
@@ -90,7 +91,10 @@ def screen(header_title, func, menu_lst, menu_cols):
     clear()
     header(header_title)
     func()
-    menu(menu_lst, menu_cols)
+    if menu_cols > 0:
+        menu(menu_lst, menu_cols)
+    else:
+        print(line)
 
 class completer():
     def __init__(self, options):
@@ -100,20 +104,20 @@ class completer():
     def complete(self, text, state):
         response = None
         if state == 0:
-            # Создание списка соответствий.
+            # Если какой-то текст передан в метод
             if text:
-                # если какой то текст есть, то вернуть список слов из списка, которые начинаются на текст
-                self.matches = [s 
-                    for s in self.options
-                    if s and s.startswith(text)]
+                # вернуть список слов из списка, которые начинаются на текст
+                self.matches = [s for s in self.options if s and s.startswith(text)]
             else:
-                # или вернуть весь список
+                # иначе вернуть весь список
                 self.matches = self.options[:]
-        # Вернуть элемент состояния из списка совпадений, 
-        # если их много. 
+
+        # Вернуть элемент состояния из списка совпадений, если их много. 
+
         try:
             response = self.matches[state]
         except IndexError:
             response = None
+
         return response
 

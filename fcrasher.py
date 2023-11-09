@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import sqlite3, datetime, readline, os, signal, sys
 from time import sleep
 from libsui import *
@@ -8,6 +9,8 @@ VERSION = '0.1.6'
 NAME = 'fcrasher.py'
 CONFIG_FILE_PATH = sys.path[0] + '/config'
 DB_NAME = sys.path[0] + '/fc.db'
+SA_PATH = sys.path[0] + '/s_assist.pl'
+ANALYST_PATH = sys.path[0] + '/analyst.py'
 
 def get_user_id(file):
     try:
@@ -95,14 +98,15 @@ def validate(what, need_type):
     else:
         return 'Unsupported type'
 
-# Enable SIG handlers and configure readline
-signal.signal(signal.SIGINT, sigint_handler)
 
 readline.set_completer_delims('\n')
 
 # Создаем подключение к БД и объект для работы с sql-запросами
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
+
+# Enable SIG handlers and configure readline
+signal.signal(signal.SIGINT, sigint_handler)
 
 # Создаем таблицы с данными о продуктах, дневник питания и о пользователе
 cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f REAL, c REAL)")
@@ -163,10 +167,16 @@ user_data = dict(
 
 current_date = datetime.date.today()
 
+db_was_changed = False
+
+food_list = cur.execute("SELECT title FROM food").fetchall() + cur.execute("SELECT title FROM dishes").fetchall()
+
 while True:
     clear()
-    food_list = cur.execute("SELECT title FROM food").fetchall()
-    
+    if db_was_changed:
+        food_list = cur.execute("SELECT title FROM food").fetchall() + cur.execute("SELECT title FROM dishes").fetchall()
+        db_was_changed = False
+
     diary = cur.execute("SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date.strftime('%Y-%m-%d'), user_id)).fetchall()
     
     kcal_norm = get_calories_norm(user_data)
@@ -192,7 +202,7 @@ while True:
         current_date += datetime.timedelta(days = 1)
     
     elif action == ':t':
-        os.system('perl ' + os.path.dirname(__file__) + '/s_assist.pl -i')
+        os.system('perl ' + SA_PATH + ' -i')
 
     elif action == ':h':
         print("Enter the name of the food to be entered in the diary", 
@@ -214,15 +224,23 @@ while True:
 
             screen('Внесение данных о новом продукте',
                    lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print("No data in database yet"),
-                    ['remove', 'quit'], 0)
+                    ['analyst', 'remove', 'quit'], 0)
 
             action = input('>> ').lower().strip()
 
             if action == ':q':
                 break
-           
+            
+            elif action == ':a':
+                os.system('python ' + ANALYST_PATH)
+            
+
+
+
+
             elif action == ':h':
                 print("Enter the name of the food to be entered in database", 
+                    "':a' analyze the complex dish",
                     "':r' remove from database",
                     "':h' show this help",
                     "':q' go back", sep='\n')
@@ -232,8 +250,7 @@ while True:
                 print('Not implemented yet')
                 sleep(1)
             
-            elif action not in [':' + c for c in 'rqh'] and len(action) > 3:
-            #elif action not in (':r', ':q', ':h') and len(action) > 3:
+            elif action not in [':' + c for c in 'arqh'] and len(action) > 3:
 
                 d = get_data({ 'kcal': 'калорийность', 
                        'p': 'содержание белков', 
@@ -243,19 +260,45 @@ while True:
 
                 cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
                 con.commit()
+                db_was_changed = True
 
             else:
                 print('Unsupported action')
                 sleep(1)
                 
     elif action not in [':' + c for c in 'lpnqht'] and len(action) > 3:
- #   elif action not in [':' + cfor c in 'lpnqht'](':l', ':p', ':n', ':q', ':h', ':t') and len(action) > 3:
+        new_entry = {
+                'date': current_date,
+                'user': user_id,
+        }
 
-        new_entry = {'title': action,
-                     'value': promt('количество'),
-                     'date': current_date,
-                     'user': user_id}
 
+        def parse_line(line):
+            '''parse single element of ingredients list'''
+            '''return tuple with title and value, or empty tuple'''
+            pat = r'^([\w ]+?)\s*(\d+(?:\.\d+)?)$'
+            try:
+                matched = re.search(pat, str(line))
+                #print(matched[1],'ttt', matched[2],)
+                return (matched[1], matched[2],)
+    
+            except TypeError:
+                #return tuple()
+                return None
+        
+        
+        data = parse_line(action)
+        
+        if data is None:
+            new_entry['title'] = action
+            new_entry['value'] = promt('количество') 
+                    # 'date': current_date,
+                    # 'user': user_id}
+            #}
+        else:
+            new_entry['title'] = data[0]
+            new_entry['value'] = data[1] 
+        
         res = (cur.execute("SELECT title, kcal FROM food WHERE title = :title", new_entry)).fetchone()
         
         if res is None:
@@ -271,6 +314,7 @@ while True:
 
             cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
             con.commit()
+            db_was_changed = True
         
         # Добавляем запись в дневник
         cur.execute("INSERT INTO diary VALUES(:user, :date, :title, :value)", new_entry)
@@ -278,3 +322,4 @@ while True:
     else:
         print("Unsupported action")
         sleep(1)
+
