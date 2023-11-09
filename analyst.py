@@ -8,7 +8,7 @@ import re
 def parse_line(line):
     '''parse single element of ingredients list'''
     '''return tuple with title and value, or empty tuple'''
-    pat = r'^([\w ]+?)\s*(\d+(?:\.\d+)?)$'
+    pat = r'^(.+?)\s*(\d+(?:\.\d+)?)$'
     try:
         matched = re.search(pat, str(line))
         #print(matched[1],'ttt', matched[2],)
