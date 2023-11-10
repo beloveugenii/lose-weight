@@ -3,7 +3,8 @@
 import re
 import sqlite3, datetime, readline, os, signal, sys
 from time import sleep
-from libsui import *
+from libsui import * 
+from lib import *
 
 VERSION = '0.1.6'
 NAME = 'fcrasher.py'
@@ -12,33 +13,9 @@ DB_NAME = sys.path[0] + '/fc.db'
 SA_PATH = sys.path[0] + '/s_assist.pl'
 ANALYST_PATH = sys.path[0] + '/analyst.py'
 
-def get_user_id(file):
-    try:
-        # Пытаемся получить номера активного пользователя из файла
-        f = open(file, 'r')
-        for line in f:
-            user_id = line.split('=')[1].strip()
-        f.close()
-    except FileNotFoundError:
-        user_id = None
-    return user_id
+current_date = datetime.date.today()
+db_was_changed = False
 
-def set_user_id(file, user_id):
-    f = open(file, 'a')
-    f.write('uid='+str(user_id)+'\n')
-    f.close()
-
-def get_calories_norm(user_data):
-
-    basic = 10 * user_data['weight'] + 6.25 * user_data['height'] - 5 * user_data['age']
-    # Для мужчин
-    if user_data['sex'] in 'мМmM':
-        return str((basic + 5)  * user_data['activity'])[:-1]
-    # Для женщин
-    elif user_data['sex'] in 'жЖfF':
-        return str((basic - 161) * user_data['activity'])[:-1]
-
-   
 def get_data(params, delay):
     data = dict()
     for key in params:
@@ -81,22 +58,6 @@ def sigint_handler(signum, frame):
     print(f'Catched {signame}')
     exit(1)
 
-def validate(what, need_type):
-    ''''''
-    what = str(what)
-
-    def isfloat(what):
-        if what.startswith('-'):
-            what = what[1:]
-        parts = what.split('.')
-        return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
-
-    if need_type == 'int':
-        return what.isdigit()
-    elif need_type == 'float':
-        return isfloat(what)
-    else:
-        return 'Unsupported type'
 
 
 readline.set_completer_delims('\n')
@@ -113,37 +74,46 @@ cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f RE
 cur.execute("CREATE TABLE IF NOT EXISTS diary(user INT, date TEXT, title TEXT, value REAL)")
 cur.execute("CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)")
 
+# Try to get id of current user from config file
 user_id = get_user_id(CONFIG_FILE_PATH)
 
 while user_id is None:
+    # Get user information from DB
     users = (cur.execute('SELECT rowid, name FROM users')).fetchall()
+    
+    # Prints screen with user information
     screen('Выбор пользователя', 
            lambda: print_as_table(users, ' ') if users else print('No users found in database'),
            ['new', 'quit'], 0)
 
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
-
+    
+    # Set completer with user ids
     readline.set_completer(completer([str(n[0]) for n in cur.execute('select rowid from users').fetchall()]).complete)
 
     choice = input('>> ').lower().strip()
     
     if choice.isdigit():
+        # if user input is digit write it into file
         user_id = int(choice)
         set_user_id(CONFIG_FILE_PATH, user_id)
     
     elif choice == ':n':
-        user_data = get_data( {'name': 'ваше имя', 
-                      'sex': 'ваш пол', 
+        # if uses input is ':n' asks data for creating new user
+
+        user_data = get_data( { 'sex': 'ваш пол', 
                       'age': 'ваш возраст', 
                       'height': 'ваш рост', 
                       'weight': 'ваш вес', 
                       'activity': 'ваша активность'}, 1)
+        user_data['name'] = get_value_from_input('ваше имя', 'str')
 
         cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", user_data)
         con.commit()
 
     elif choice == ':q':
+        # if user input is ':q' quit from program
         exit(0)
     
     elif choice == ':h':
@@ -165,9 +135,6 @@ user_data = dict(
                 )
             )
 
-current_date = datetime.date.today()
-
-db_was_changed = False
 
 food_list = cur.execute("SELECT title FROM food").fetchall() + cur.execute("SELECT title FROM dishes").fetchall()
 
