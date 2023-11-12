@@ -3,23 +3,8 @@
 import sqlite3, datetime, readline, os, signal, sys
 from time import sleep
 from libsui import *
+from lib import *
 import re
-
-def parse_line(line):
-    '''parse single element of ingredients list'''
-    '''return tuple with title and value, or empty tuple'''
-    pat = r'^(.+?)\s*(\d+(?:\.\d+)?)$'
-    try:
-        matched = re.search(pat, str(line))
-        #print(matched[1],'ttt', matched[2],)
-        return (matched[1], matched[2],)
-    
-    except TypeError:
-        #return tuple()
-        return None
-
-print(parse_line(input()))
-
 
 VERSION = '0.1.0'
 NAME = 'analyst.py'
@@ -36,12 +21,12 @@ def get_ingrs():
     return tuple(lst)
  
 # Обработчик нажатия Ctrl-C
-#def sigint_handler(signum, frame):
-#    '''Simple sigint handler'''
-#    signame = signal.Signals(signum).name
-#    clear()
-#    print(f'Catched {signame}')
-#    exit(1)
+def sigint_handler(signum, frame):
+    '''Simple sigint handler'''
+    signame = signal.Signals(signum).name
+    clear()
+    print(f'Catched {signame}')
+    exit(1)
 
 #def validate(what, need_type):
 #    ''''''
@@ -60,41 +45,36 @@ def get_ingrs():
 #    else:
 #        return 'Unsupported type'
 
-# Enable SIG handlers and configure readline
-#signal.signal(signal.SIGINT, sigint_handler)
 
 # Создаем подключение к БД и объект для работы с sql-запросами
-#con = sqlite3.connect(DB_NAME)
-#cur = con.cursor()
+con = sqlite3.connect(DB_NAME)
+cur = con.cursor()
 
-#readline.set_completer_delims('\n')
+# Enable SIG handlers and configure readline
+signal.signal(signal.SIGINT, sigint_handler)
+readline.set_completer_delims('\n')
 
 #  создать таблицу для собственных блюд
-#cur.execute("CREATE TABLE IF NOT EXISTS dishes(title TEXT, ingredients TEXT, kcal REAL, p REAL, f REAL, c REAL)")
+cur.execute("CREATE TABLE IF NOT EXISTS dishes(title TEXT, ingredients TEXT, kcal REAL, p REAL, f REAL, c REAL)")
   # Enable tab-completion
 #readline.parse_and_bind('tab: complete')
 
    
  
-#while True:
-#    clear()
+while True:
+    clear()
     # данные из таблицы с блюдами
-#    dishes_list = cur.execute("SELECT title FROM dishes").fetchall()
-#    food_list = cur.execute("SELECT title FROM food").fetchall()
+    dishes_list = cur.execute("SELECT title FROM dishes").fetchall()
+    food_list = cur.execute("SELECT title FROM food").fetchall()
 # вче для анализатора   
-#    screen('Анализатор калорийности рецепта',
-#            lambda: print(*dishes_list) if dishes_list else print('No entries') ,
-#           ['create a new dish',  'remove an existing dish', 'quit'], 2)
+    screen('Анализатор калорийности рецепта',
+            lambda: print(*dishes_list) if dishes_list else print('No entries') ,
+           ['create a new dish',  'remove an existing dish', 'quit'], 3)
     
 
     # Enable tab-completion
-#    readline.parse_and_bind('tab: complete')
-#    readline.set_completer(completer([food[0] for food in food_list]).complete)
-
-#    ing_list = get_ingrs()
-#    for l in ing_list:
-#        print(l)
-
+    readline.parse_and_bind('tab: complete')
+    readline.set_completer(completer([food[0] for food in food_list]).complete)
 
 #    action = input('>> ').lower().strip()
 

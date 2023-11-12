@@ -1,5 +1,18 @@
+import re
 from time import sleep
 
+def parse_line(line):
+    '''parse single element of ingredients list'''
+    '''return tuple with title and value, or empty tuple'''
+    pat = r'^(.+?)\s*(\d+(?:\.\d+)?)$'
+    try:
+        matched = re.search(pat, str(line))
+        return (matched[1], matched[2],)
+    
+    except TypeError:
+                #return tuple()
+        return None
+        
 def get_user_id(file):
     '''try to get user id from file'''
     try:
@@ -27,47 +40,47 @@ def get_calories_norm(user):
     elif user['sex'] in 'жЖfF':
         return str((basic - 161) * user['activity'])[:-1]
 
-def validate(what, expected):
-    '''check what is expected type'''
-    what = str(what)
 
-    def isfloat(what):
-        if what.startswith('-'):
-            what = what[1:]
-        parts = what.split('.')
-        return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
+def isfloat(what):
+    if what.startswith('-'):
+        what = what[1:]
+    parts = what.split('.')
+    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
 
-    if expected == 'int':
-        return what.isdigit()
-    else:
-        print('Здесь требуется число d')
-        sleep(1)
-    
-    if expected == 'float':
-        return isfloat(what)
-    else:
-        print('Здесь требуется число f')
-        sleep(1)
-    
-    if expected == 'str':
-        return what.isalpha() and len(what) > 3
-    else:
-        print('Слишком короткая строка')
-        sleep(1)
+def get_data(params, delay):
+    data = dict()
+    for key in params:
+        if key in ('title', 'name', 'sex'):
+            while True:
+                it = input(params[key] + ': ')
+                if len(it) < 2 and not key == 'sex':
+                    print('Слишком короткая строка')
+                    sleep(delay)
+                else:
+                    if key == 'sex' and it not in 'мМжЖmMfF':
+                        print('Требуется обозначение пола: [мМ или жЖ]')
+                        sleep(delay)
+                    else:
+                        data[key] = it
+                        break
+        elif key in ('kcal', 'age', 'height', 'weight', 'value', 'activity', 'p', 'c', 'f'):
+            while True:
+                if key == 'activity':
+                    print("1.2 – минимальная активность, сидячая работа, не требующая значительных физических нагрузок", "1.375 – слабый уровень активности: интенсивные упражнения не менее 20 минут один-три раза в неделю", "1.55 – умеренный уровень активности: интенсивная тренировка не менее 30-60 мин три-четыре раза в неделю", "1.7 – тяжелая или трудоемкая активность: интенсивные упражнения и занятия спортом 5-7 дней в неделю или трудоемкие занятия", "1.9 – экстремальный уровень: включает чрезвычайно активные и/или очень энергозатратные виды деятельности", sep='\n')
 
-   # if what in expected:
-    #    return True
-        
-    return False
+                try:
+                    it = input(params[key] + ': ')
 
-def get_value_from_input(promt, expected):
-    value = None
-    while True:
-        value = input(promt + ': ')
-        if validate(value, expected):
-            break
-    
-    return value
+                    if it == '':
+                        it = 1 if key == 'activity' else 0
 
-    
+                    data[key] = float(it)
+                    break
+                except ValueError:
+                    print('Здесь требуется число')
+                    sleep(delay)
+
+    return data
+
+
 
