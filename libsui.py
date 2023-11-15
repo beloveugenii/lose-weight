@@ -1,11 +1,11 @@
 # libsui.py
 
 from os import get_terminal_size                       
-#from readline import *
 
-version = '0.0.1'
-screen_width = get_terminal_size()[0]
-line = '-' * screen_width
+version = '0.0.2'
+
+def line():
+    print('-' * get_terminal_size()[0])
 
 def clear():
     # clears the screen
@@ -37,6 +37,8 @@ def get_fields_len(array):
     for c in range(cols):
         fields.append(max(len(str(array[r][c])) for r in range(rows)))
     
+    screen_width = get_terminal_size()[0]
+
     # defines wifth of empty fields 
     sep_len = (screen_width - sum(fields)) // ( len(fields) + 1)
     
@@ -58,12 +60,24 @@ def print_as_table(items, sep):
         else:
             print('%s' % (sep * sep_len,))
 
+def hide_cursor():
+    print("\033[?25l")
+
+def restore_cursor():
+    print("\033[?25h")
+
+def save_cursor_pos():
+    print("\033[s")
+
+def restore_cursor_pos():
+    print("\033[u")
+
 def header(text):
     # takes a string and transform it to list of tuples with single element
     # print a string in center of screen
-    print(line)
+    line()
     print_as_table([(text,), ],' ')
-    print(line)
+    line()
 
 def menu(array, cols):
     # takes a list ol menu elements and columns number
@@ -81,9 +95,10 @@ def menu(array, cols):
         menu_lst.append(tuple(tmp))
 
     # print list of tuples like menu
-    print(line)
-    print_as_table(menu_lst, ' ')
-    print(line)
+    line()
+    if cols > 0:
+        print_as_table(menu_lst, ' ')
+        line()
 
 def screen(header_title, func, menu_lst, menu_cols):
     # takes a list with header text, some function, menu list and number of menu columns
@@ -91,10 +106,7 @@ def screen(header_title, func, menu_lst, menu_cols):
     clear()
     header(header_title)
     func()
-    if menu_cols > 0:
-        menu(menu_lst, menu_cols)
-    else:
-        print(line)
+    menu(menu_lst, menu_cols)
 
 class completer():
     def __init__(self, options):
