@@ -52,6 +52,7 @@ def show_statistic():
 def sigint_handler(signum, frame):
     signame = signal.Signals(signum).name
     clear()
+    header('Статистика')
    # print(f'Catched {signame}')
     show_statistic()
     restore_cursor()
