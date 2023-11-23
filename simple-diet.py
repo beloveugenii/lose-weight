@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-import sqlite3, datetime, readline, os, signal, sys
-from time import sleep
-from libsui import * 
+import sqlite3, datetime, readline, signal
+from os import system
 from lib import *
 
+PROG_NAME = 'simple-diet'
 VERSION = '0.1.6'
-NAME = 'fcrasher.py'
 CONFIG_FILE_PATH = sys.path[0] + '/config'
 DB_NAME = sys.path[0] + '/fc.db'
-SA_PATH = sys.path[0] + '/s_assist.pl'
+SS_PATH = sys.path[0] + '/simple-sport.py'
 ANALYST_PATH = sys.path[0] + '/analyst.py'
 
 current_date = datetime.date.today()
@@ -107,7 +106,7 @@ while True:
     
     screen('Дневник питания ' + current_date.strftime('%Y-%m-%d'),
                     lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
-           ['list of food', 'previous entry', 'next entry', 'trainings', 'help', 'quit'], 3)
+           ['list of food', 'previous entry', 'next entry', 'simple-sport', 'help', 'quit'], 3)
     
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
@@ -124,8 +123,9 @@ while True:
     elif action == 'n':
         current_date += datetime.timedelta(days = 1)
     
-    elif action == 't':
-        os.system('perl ' + SA_PATH + ' -i')
+    elif action == 's':
+        system('python3 ' + SS_PATH + ' -h')
+        a=input()
 
     elif action == 'h':
         print("Enter the name of the food to be entered in the diary", 

@@ -1,43 +1,36 @@
 #!/usr/bin/env python3
-from libsui import *
 from lib import *
 from time import sleep
-import sys, os
 import argparse
 import signal
 
-VERSION = '0.1.5'
+PROG_NAME = 'simple-sport'
+VERSION = '0.1.6'
 EXERCISES_DIR = sys.path[0] + '/basics'
 
+parser = argparse.ArgumentParser(description='Minimalistic console sport assistant',)
 
-#  parser = argparse.ArgumentParser(description='Minimalistic console sport assistant. It is part of fcracher',)
+parser.add_argument('-f', '--files', action='append', nargs='+', help='start training from files')
+parser.add_argument('-t', action='store', help='start timer with given exercise name')
+parser.add_argument('-v','--version', action='version', version=f'{PROG_NAME} {VERSION}')
 #  parser.add_argument('-s', '--sound', action='store_true', help='enables sound in Termux')
-#  parser.add_argument('-t', '--timer', action='store', help='start timer with given exercise name')
-#  parser.add_argument('-v', '--version', action='store_true', help='show program version')
 #  parser.add_argument('-i', '--interactive', action='store_true', help='start an interactive mode')
 
-#  args = parser.parse_args()
-statistic = dict()
+# Dict for statistic
+STATISTIC = dict()
+
+#  ВКЛЮЧЕНИЕ ЗВУКА В ТЕРМУКСЕ
+#  ВЫКЛЮЧЕНИЕ ЗВУКА ПРИ ПРЕРЫВАНИИ  ИЛИ ЗАВЕРШЕНИИ РАБОТЫ
+#  ПОКАЗЫВАТЬ ПРОГРАММУ ТРЕНИРОВКИ
+#  ИНТЕРАКТИВНЫЙ РЕЖИМ С ВЫБОРОМ ФАЙЛОВ  ИЗ ДИРЕКТОРИИ
+
+args = parser.parse_args()
 
 
-# Start timer-mode
-#  if args.timer:
-    #  timer(args.timer)
-
-def show_statistic():
-    clear()
-    header('Статистика')
-    for item in statistic.items():
-        print(item[0] + ': ' + sec_to_hms(item[1]))
-    restore_cursor()
-    a = input()
- #   print(statistic)
 
 def sigint_handler(signum, frame):
-    #  signame = signal.Signals(signum).name
-    restore_cursor()
-    show_statistic()
-    exit(0)
+    show_statistic(STATISTIC)
+    exit(-1)
 
 signal.signal(signal.SIGINT, sigint_handler)
 
@@ -47,10 +40,8 @@ def print_big_nums(num):
     if num > 99:
         l = num // 100
         num %= 100
-    
     c = num // 10
     num %= 10
-    
     if c == 0 and l == -1:
         c = -1
 
@@ -62,36 +53,41 @@ def empty_start():
     print("No file set.\nUsage: " + NAME + " [OPTIONS] [FILE]")
     sys.exit(-1)
 
-def timer(ex):
-    hide_cursor()
-    timer = 0
-    statistic[ex] = 0
-    while True:
-        clear()
-        header('Таймер')
-        print ("Текущее упражнение: " + ex + "\n" * 4)
-        save_cursor_pos()
-        print("\n" * 12)
-        print_big_nums(timer)
-        restore_cursor_pos()
-        sleep(1)
-        statistic[ex] += 1
-        timer += 1
 
-# ДЛЯ КАЖДОГО ВЫБРАННОГО ФАЙЛА ТРЕНИРОВКИ
+def timer(title):
+    timer = 0
+    hide_cursor()
+    
+    clear()
+    header('Таймер')
+    print(f'Текущее упражнение: {title}' + "\n" * 4)
+    save_cursor_pos()
+
+    while True:
+        print_big_nums(timer)
+        incr_or_av(STATISTIC, title)
+        sleep(1)  
+        timer += 1
+        restore_cursor_pos()
+    
+    show_statistic(STATISTIC)
+    exit(0)
+
+# Start timer-mode
+if args.t:
+    timer(args.t)
+
 
 hide_cursor()
 
-for file in sys.argv[1:]:
+for file in args.files[0]:
     # Parse every file
     data = parse_file(file)
-
-
-
 
     for repeat in range(int(data['repeats'])):
         # For every repeat generate exercises list
         current_list = prepare_training(data, repeat)
+        # And take its length
         current_list_len = len(current_list)
 
         for i in range(current_list_len):
@@ -105,6 +101,7 @@ for file in sys.argv[1:]:
             except IndexError:
                 pass
 
+            # main screen with exercise and timer
             clear()
             header(f'{data["name"]} {repeat + 1} / {data["repeats"]}')
 
@@ -116,15 +113,17 @@ for file in sys.argv[1:]:
                 print(f'Следующее упражнение: {next_title} {next_duration}')
             else:
                 if repeat != int(data['repeats']) - 1:
-                    print('Конец подхода')
+                    print(strings['on_end'])
                 else:
                     print()
 
-            for t in range(current_list[i][1], -1, -1):
+            for t in range(duration, -1, -1):
                 restore_cursor_pos()
                 print_big_nums(t)
+                incr_or_av(STATISTIC, title)
                 sleep(1)
-        
-            sleep(0.25)
 
-show_statistic()
+
+# after whole training
+show_statistic(STATISTIC)
+

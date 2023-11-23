@@ -1,8 +1,10 @@
+from libsui import *
 import re
 from time import sleep
 import sys
 from random import randint
 
+# SIMPLE_SPORT BLOCK
 nums = { 0: ( "#########", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########", "#########", ),
         1: ( "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  " ),
         2: ( "#########", "#########", "      ###", "#########", "#########", "###      ", "#########", "#########", ),
@@ -15,6 +17,7 @@ nums = { 0: ( "#########", "#########", "###   ###", "###   ###", "###   ###", "
         9: ( "#########", "#########", "###   ###", "#########", "#########", "      ###", "#########", "#########", ),
         -1: ( "         ", "         ", "         ", "         ", "         ", "         ", "         ", "         ", ), }
 
+strings = {'pause': 'Пауза', 'prepare': 'Приготовьтесь', 'relax': 'Время отдохнуть', 'on_end': 'Конец тренировки'}
 
 def hms_to_sec(time):
     '''takes time and return it in seconds'''
@@ -51,27 +54,14 @@ def sec_to_hms(sec):
         res += '{}м '.format(m)
     res += '{}с'.format(sec)
     return res
-
-def prepare_training(data, current_repeat):
-    '''takes data dict and current repeat number'''
-    '''repeats list of exercises for current repeat in right order'''
-    r_list = []
-    for k, v in data['training_list']:
-        k =  k.split('|')
-        v = hms_to_sec(v)
-
-        r_list.append(('Пауза', hms_to_sec(data['pause'])))
-        r_list.append((k[randint(0, len(k) - 1)], v))
-
-    if current_repeat == 0:
-        r_list[0] = ('Приготовьтесь', hms_to_sec(data['pause']))
-    else:
-        r_list[0] = ('Время отдохнуть', hms_to_sec(data['relax']))
-
-    if current_repeat == int(data['repeats']) - 1:
-        r_list.append(('Конец тренировки', hms_to_sec(data['on_end'])))
-
-    return r_list
+    
+def incr_or_av(some_dict, key):
+    '''try increment value of key in some_dict'''
+    '''create pair with given key if no key in dict'''
+    try:
+        some_dict[key] += 1
+    except KeyError:
+        some_dict[key] = 0
 
 def parse_file(file_name):
     '''takes a training file name and parses it'''
@@ -108,6 +98,45 @@ def parse_file(file_name):
     file.close()
     return data
 
+def prepare_training(data, current_repeat):
+    '''takes data dict and current repeat number'''
+    '''repeats list of exercises for current repeat in right order'''
+    r_list = []
+    for k, v in data['training_list']:
+        k =  k.split('|')
+        v = hms_to_sec(v)
+
+        r_list.append((strings['pause'], hms_to_sec(data['pause'])))
+        r_list.append((k[randint(0, len(k) - 1)], v))
+
+    if current_repeat == 0:
+        r_list[0] = (strings['prepare'], hms_to_sec(data['pause']))
+    else:
+        r_list[0] = (strings['relax'], hms_to_sec(data['relax']))
+
+    if current_repeat == int(data['repeats']) - 1:
+        r_list.append((strings['on_end'], hms_to_sec(data['on_end'])))
+
+    return r_list
+
+def show_statistic(stat_dict):
+    clear()
+    if len(stat_dict) < 2:
+        exit(0)
+    total_counter = 0
+    header('Статистика тренировки')
+    for title, duration in stat_dict.items():
+        if title in strings.values():
+            continue
+        total_counter += duration
+        print(title + ': ' + sec_to_hms(duration))
+    
+    if total_counter > 0:
+        print(f'\nОбщее время тренировки: {sec_to_hms(total_counter)}')
+    restore_cursor()
+    a = input()
+
+# FCRASHER BLOCK
 def parse_line(line):
     '''parse single element of ingredients list'''
     '''return tuple with title and value, or empty tuple'''
@@ -117,7 +146,6 @@ def parse_line(line):
         return (matched[1], matched[2],)
     
     except TypeError:
-                #return tuple()
         return None
         
 def get_user_id(file):
