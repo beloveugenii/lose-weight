@@ -105,17 +105,23 @@ for file in args.files[0]:
             clear()
             header(f'{data["name"]} {repeat + 1} / {data["repeats"]}')
 
-            print(f'Текущее упражнение: {title} {duration}' + "\n" * 4)
+            print(f'Текущее упражнение: {title} {duration}')
+            
+            if title not in strings.values():
+                print(f'{get_random_speed()}' + '\n' * 3)
+            else:
+                print('\n' * 3)
+
             save_cursor_pos()
             print('\n' * 12)
 
             if i != current_list_len - 1:
-                print(f'Следующее упражнение: {next_title} {next_duration}')
+                print(f'Следующее упражнение: {next_title} {next_duration}',end='')
             else:
                 if repeat != int(data['repeats']) - 1:
-                    print(strings['on_end'])
+                    print(strings['on_end'], end='')
                 else:
-                    print()
+                    print(end='')
 
             for t in range(duration, -1, -1):
                 restore_cursor_pos()

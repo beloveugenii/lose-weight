@@ -2,7 +2,7 @@ from libsui import *
 import re
 from time import sleep
 import sys
-from random import randint
+from random import randint, choice
 
 # SIMPLE_SPORT BLOCK
 nums = { 0: ( "#########", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########", "#########", ),
@@ -37,6 +37,10 @@ def hms_to_sec(time):
 
     except AttributeError:
         return None
+
+def get_random_speed():
+    '''return random string with speed'''
+    return choice(('Медленно', 'Нормально', 'Быстро'))
 
 def sec_to_hms(sec):
     '''takes time in seconds'''
