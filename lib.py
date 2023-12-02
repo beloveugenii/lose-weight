@@ -1,23 +1,10 @@
 from libsui import *
+from string_literals import *
 import re
 from time import sleep
 import sys
 from random import randint, choice
 
-# SIMPLE_SPORT BLOCK
-nums = { 0: ( "#########", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########", "#########", ),
-        1: ( "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  " ),
-        2: ( "#########", "#########", "      ###", "#########", "#########", "###      ", "#########", "#########", ),
-        3: ( "#########", "#########", "      ###", "  #######", "  #######", "      ###", "#########", "#########", ),
-        4: ( "###   ###", "###   ###", "###   ###", "#########", "#########", "      ###", "      ###", "      ###", ),
-        5: ( "#########", "#########", "###      ", "#########", "#########", "      ###", "#########", "#########", ),
-        6: ( "#########", "#########", "###      ", "#########", "#########", "###   ###", "#########", "#########", ),
-        7: ( "#########", "#########", "      ###", "      ###", "      ###", "      ###", "      ###", "      ###", ),
-        8: ( "#########", "#########", "###   ###", "#########", "#########", "###   ###", "#########", "#########", ),
-        9: ( "#########", "#########", "###   ###", "#########", "#########", "      ###", "#########", "#########", ),
-        -1: ( "         ", "         ", "         ", "         ", "         ", "         ", "         ", "         ", ), }
-
-strings = {'pause': 'Пауза', 'prepare': 'Приготовьтесь', 'relax': 'Время отдохнуть', 'on_end': 'Конец тренировки'}
 
 def hms_to_sec(time):
     '''takes time and return it in seconds'''
@@ -40,7 +27,7 @@ def hms_to_sec(time):
 
 def get_random_speed():
     '''return random string with speed'''
-    return choice(('Медленно', 'Нормально', 'Быстро'))
+    return choice(SPEEDS)
 
 def sec_to_hms(sec):
     '''takes time in seconds'''
@@ -140,7 +127,25 @@ def show_statistic(stat_dict):
     restore_cursor()
     a = input()
 
+
+def print_big_nums(num):
+    '''takes a num and prints big digits of it'''
+    l, c  = -1, -1
+    if num > 99:
+        l = num // 100
+        num %= 100
+    c = num // 10
+    num %= 10
+    if c == 0 and l == -1:
+        c = -1
+
+    for i in range(8):
+        print_as_table([(BNUMS[l][i], BNUMS[c][i],BNUMS[num][i],)], ' ')
+
+
+
 # FCRASHER BLOCK
+
 def parse_line(line):
     '''parse single element of ingredients list'''
     '''return tuple with title and value, or empty tuple'''
@@ -163,6 +168,8 @@ def get_user_id(file):
     except FileNotFoundError:
         user_id = None
     return user_id
+
+
 
 def set_user_id(file, user_id):
     '''write userid into file'''

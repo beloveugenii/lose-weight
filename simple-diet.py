@@ -5,7 +5,7 @@ from os import system
 from lib import *
 
 PROG_NAME = 'simple-diet'
-VERSION = '0.1.6'
+VERSION = '0.1.6a'
 CONFIG_FILE_PATH = sys.path[0] + '/config'
 DB_NAME = sys.path[0] + '/fc.db'
 SS_PATH = sys.path[0] + '/simple-sport.py'
@@ -13,6 +13,7 @@ ANALYST_PATH = sys.path[0] + '/analyst.py'
 
 current_date = datetime.date.today()
 db_was_changed = False
+user_was_changed = False
 
 # Обработчик нажатия Ctrl-C
 def sigint_handler(signum, frame):
@@ -22,44 +23,43 @@ def sigint_handler(signum, frame):
     exit(1)
 
 
-# Create connection to database and create needed tables
+# Creating connection to database and creating needed tables
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
 
-cur.execute("CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f REAL, c REAL)")
-cur.execute("CREATE TABLE IF NOT EXISTS diary(user INT, date TEXT, title TEXT, value REAL)")
-cur.execute("CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)")
+for stmt in SQL_CREATE_STMT.values():
+    cur.execute(stmt)
 
 # Enable SIG handlers and configure readline
 signal.signal(signal.SIGINT, sigint_handler)
 readline.set_completer_delims('\n')
 
 
+
 ########################
-
-# Try to get id of current user from config file
-user_id = get_user_id(CONFIG_FILE_PATH)
-
-while user_id is None:
-    # Get user information from DB
-    users = (cur.execute('SELECT rowid, name FROM users')).fetchall()
+def set_user():
+    while True:
+        # Get user information from DB
+        users = (cur.execute('SELECT rowid, name FROM users')).fetchall()
     
-    # Prints screen with user information
-    screen('Выбор пользователя', 
-           lambda: print_as_table(users, ' ') if users else print('No users found in database'),
-           ['new user creating', 'help', 'quit'], 3)
+        # Prints screen with user information
+        screen('Выбор пользователя',
+               lambda: print_as_table(users, ' ') if users else print('No users found in database'),
+               ['new user creating', 'help', 'quit'], 3
+        )
 
-    choice = input('>> ').lower().strip()
+        uch = input('>> ').lower().strip()
     
-    if choice.isdigit():
-        # if user input is digit write it into file
-        user_id = int(choice)
-        set_user_id(CONFIG_FILE_PATH, user_id)
-    
-    elif choice == 'n':
-        # if uses input is ':n' asks data for creating new user
+        if uch.isdigit():
+            # if user input is digit write it into file
+            user_id = int(uch)
+            set_user_id(CONFIG_FILE_PATH, user_id)
+            break
 
-        user_data = get_data( { 
+        elif uch == 'n':
+            # if uses input is 'n' asks data for creating new user
+
+            user_data = get_data( { 
                                'name': 'ваше имя', 
                                'sex': 'ваш пол', 
                                'age': 'ваш возраст', 
@@ -67,33 +67,39 @@ while user_id is None:
                                'weight': 'ваш вес', 
                                'activity': 'ваша активность'}, 1)
 
-        cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", user_data)
-        con.commit()
+            cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", user_data)
+            con.commit()
 
-    elif choice == 'q':
-        # if user input is ':q' quit from program
-        exit(0)
+        elif uch == 'q':
+            # if user input is 'q' quit from program
+            exit(0)
     
-    elif choice == 'h':
-        print("Type user ID for choosing", 
-              "'n' create new user",
-              "'h' show this help",
-              "'q' quit", sep='\n')
+        elif uch == 'h':
+            print(MENU_HELPS['users'])
 
-        a = input()
+            a = input()
     
-    else:
-        print('Unsupported action')
-        sleep(1)
-         
-user_data = dict(
+        else:
+            print('Unsupported action')
+            sleep(1)
+        
+    return user_id
+#######################
+
+# Try to get id of current user from config file
+user_id = get_user_id(CONFIG_FILE_PATH)
+
+if user_id is None:
+    user_id = set_user()
+
+
+user_data = dict( 
                 map(lambda *args: args, 
                     ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), 
                     (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_id,)).fetchone())
                 )
             )
 
-#############
 
 
 
@@ -105,6 +111,16 @@ while True:
         food_list = cur.execute("SELECT title FROM food").fetchall() + cur.execute("SELECT title FROM dishes").fetchall()
         db_was_changed = False
 
+    if user_was_changed:
+        user_data = dict(
+                map(lambda *args: args, 
+                    ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), 
+                    (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_id,)).fetchone())
+                )
+            )
+        user_was_changed = False
+
+
     diary = cur.execute("SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date.strftime('%Y-%m-%d'), user_id)).fetchall()
     
     kcal_norm = get_calories_norm(user_data)
@@ -112,7 +128,7 @@ while True:
     
     screen('Дневник питания ' + current_date.strftime('%Y-%m-%d'),
                     lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
-           ['list of food', 'previous entry', 'next entry', 'simple-sport', 'help', 'quit'], 3)
+           ['list of food', 'users', 'previous entry', 'next entry', 'simple-sport', 'help', 'quit'], 2)
     
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
@@ -123,6 +139,10 @@ while True:
     if action == 'q':
         break
     
+    elif action == 'u':
+        user_id = set_user()
+        user_was_changed = True
+
     elif action == 'p':
         current_date -= datetime.timedelta(days = 1)
 
@@ -134,13 +154,7 @@ while True:
         a=input()
 
     elif action == 'h':
-        print("Enter the name of the food to be entered in the diary", 
-              "'n' go to the next day",
-              "'p' go to the previous day",
-              "'l' show food in database",
-              "'t' go to sport assistant",
-              "'h' show this help",
-              "'q' quit", sep='\n')
+        print(MENU_HELPS['main'])
         a = input()
 
     elif action == 'l':
@@ -166,11 +180,7 @@ while True:
                 #os.system('python ' + ANALYST_PATH)
 
             elif action == 'h':
-                print("Enter the name of the food to be entered in database", 
-                    "'a' analyze the complex dish",
-                    "'r' remove from database",
-                    "'h' show this help",
-                    "'q' go back", sep='\n')
+                print(MENU_HELPS['food'])
                 a = input()
 
             elif action == 'r':

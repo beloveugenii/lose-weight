@@ -54,8 +54,6 @@ cur = con.cursor()
 signal.signal(signal.SIGINT, sigint_handler)
 readline.set_completer_delims('\n')
 
-#  создать таблицу для собственных блюд
-cur.execute("CREATE TABLE IF NOT EXISTS dishes(title TEXT, ingredients TEXT, kcal REAL, p REAL, f REAL, c REAL)")
   # Enable tab-completion
 #readline.parse_and_bind('tab: complete')
 

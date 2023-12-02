@@ -5,7 +5,7 @@ import argparse
 import signal
 
 PROG_NAME = 'simple-sport'
-VERSION = '0.1.6'
+VERSION = '0.1.6a'
 EXERCISES_DIR = sys.path[0] + '/basics'
 
 parser = argparse.ArgumentParser(description='Minimalistic console sport assistant',)
@@ -34,25 +34,10 @@ def sigint_handler(signum, frame):
 
 signal.signal(signal.SIGINT, sigint_handler)
 
-def print_big_nums(num):
-    '''takes a num and prints big digits of it'''
-    l, c  = -1, -1
-    if num > 99:
-        l = num // 100
-        num %= 100
-    c = num // 10
-    num %= 10
-    if c == 0 and l == -1:
-        c = -1
-
-    for i in range(8):
-        print_as_table([(nums[l][i],nums[c][i], nums[num][i],)], ' ')
-
 def empty_start():
     '''Fileless startup handler'''
     print("No file set.\nUsage: " + NAME + " [OPTIONS] [FILE]")
     sys.exit(-1)
-
 
 def timer(title):
     timer = 0
@@ -108,7 +93,7 @@ for file in args.files[0]:
             print(f'Текущее упражнение: {title} {duration}')
             
             if title not in strings.values():
-                print(f'{get_random_speed()}' + '\n' * 3)
+                print(f'Скорость выполнения: {get_random_speed()}' + '\n' * 3)
             else:
                 print('\n' * 3)
 
