@@ -34,6 +34,9 @@ cur.execute("CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, heig
 signal.signal(signal.SIGINT, sigint_handler)
 readline.set_completer_delims('\n')
 
+
+########################
+
 # Try to get id of current user from config file
 user_id = get_user_id(CONFIG_FILE_PATH)
 
@@ -89,6 +92,9 @@ user_data = dict(
                     (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_id,)).fetchone())
                 )
             )
+
+#############
+
 
 
 food_list = cur.execute("SELECT title FROM food").fetchall() + cur.execute("SELECT title FROM dishes").fetchall()
