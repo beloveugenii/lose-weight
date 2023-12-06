@@ -1,5 +1,5 @@
 from libsui import *
-from string_literals import *
+from STRINGS import *
 import re
 from time import sleep
 import sys
@@ -115,7 +115,7 @@ def show_statistic(stat_dict):
     if len(stat_dict) < 2:
         exit(0)
     total_counter = 0
-    header('Статистика тренировки')
+    header(HEADERS['statistic'])
     for title, duration in stat_dict.items():
         if title in strings.values():
             continue

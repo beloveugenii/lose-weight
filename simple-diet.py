@@ -43,7 +43,7 @@ def set_user():
         users = (cur.execute('SELECT rowid, name FROM users')).fetchall()
     
         # Prints screen with user information
-        screen('Выбор пользователя',
+        screen(HEADERS['user_ch'],
                lambda: print_as_table(users, ' ') if users else print('No users found in database'),
                ['new user creating', 'help', 'quit'], 3
         )
@@ -126,7 +126,7 @@ while True:
     kcal_norm = get_calories_norm(user_data)
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
     
-    screen('Дневник питания ' + current_date.strftime('%Y-%m-%d'),
+    screen(HEADERS['diary'] + ' ' + current_date.strftime('%Y-%m-%d'),
                     lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
            ['list of food', 'users', 'previous entry', 'next entry', 'simple-sport', 'help', 'quit'], 2)
     
@@ -150,8 +150,7 @@ while True:
         current_date += datetime.timedelta(days = 1)
     
     elif action == 's':
-        system('python3 ' + SS_PATH + ' -h')
-        a=input()
+        system('python3 ' + SS_PATH + ' -i')
 
     elif action == 'h':
         print(MENU_HELPS['main'])
@@ -165,7 +164,7 @@ while True:
             # Disable tab-completion
             readline.parse_and_bind('tab: \t')
 
-            screen('Внесение данных о новом продукте',
+            screen(HEADERS['food_db'],
                    lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print("No data in database yet"),
                     ['analyst', 'remove', 'help', 'quit'], 2)
 

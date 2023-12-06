@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from lib import *
 from time import sleep
+from os import scandir
 import argparse
 import signal
 
@@ -10,11 +11,11 @@ EXERCISES_DIR = sys.path[0] + '/basics'
 
 parser = argparse.ArgumentParser(description='Minimalistic console sport assistant',)
 
-parser.add_argument('-f', '--files', action='append', nargs='+', help='start training from files')
+parser.add_argument('-f', action='append', nargs='+', help='start training from files')
 parser.add_argument('-t', action='store', help='start timer with given exercise name')
 parser.add_argument('-v','--version', action='version', version=f'{PROG_NAME} {VERSION}')
 #  parser.add_argument('-s', '--sound', action='store_true', help='enables sound in Termux')
-#  parser.add_argument('-i', '--interactive', action='store_true', help='start an interactive mode')
+parser.add_argument('-i', action='store_true', help='start an interactive mode')
 
 # Dict for statistic
 STATISTIC = dict()
@@ -25,8 +26,6 @@ STATISTIC = dict()
 #  ИНТЕРАКТИВНЫЙ РЕЖИМ С ВЫБОРОМ ФАЙЛОВ  ИЗ ДИРЕКТОРИИ
 
 args = parser.parse_args()
-
-
 
 def sigint_handler(signum, frame):
     show_statistic(STATISTIC)
@@ -39,12 +38,27 @@ def empty_start():
     print("No file set.\nUsage: " + NAME + " [OPTIONS] [FILE]")
     sys.exit(-1)
 
+def interactive():
+    '''Interactive mode'''
+    r_files = list()
+    files = [EXERCISES_DIR + '/' + file.name for file in scandir(EXERCISES_DIR)]
+    clear()
+    header(HEADERS['interactive'])
+    for i in range(len(files)):
+        print(i + 1, parse_file(files[i])['name'])
+    line()
+    a = input('>> ')
+    for i in [int(ch) for ch in a.split()]:
+        r_files.append(files[i - 1])
+    
+    return r_files
+
 def timer(title):
     timer = 0
     hide_cursor()
     
     clear()
-    header('Таймер')
+    header(HEADERS['timer'])
     print(f'Текущее упражнение: {title}' + "\n" * 4)
     save_cursor_pos()
 
@@ -58,14 +72,9 @@ def timer(title):
     show_statistic(STATISTIC)
     exit(0)
 
-# Start timer-mode
-if args.t:
-    timer(args.t)
+def do_training(file):
+    hide_cursor()
 
-
-hide_cursor()
-
-for file in args.files[0]:
     # Parse every file
     data = parse_file(file)
 
@@ -114,6 +123,19 @@ for file in args.files[0]:
                 incr_or_av(STATISTIC, title)
                 sleep(1)
 
+# Start timer-mode
+if args.t:
+    timer(args.t)
+
+# Start interactive mode
+if args.i:
+    for file in interactive():
+        do_training(file)
+
+# Command-line mode
+if args.f:
+    for file in args.f[0]:
+        do_training(file)
 
 # after whole training
 show_statistic(STATISTIC)

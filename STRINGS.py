@@ -20,6 +20,14 @@ strings = {'pause': 'Пауза', 'prepare': 'Приготовьтесь', 'rela
 
 SPEEDS = ('Средне', 'Быстро')
 
+HEADERS = {
+    'user_ch': 'Выбор пользователя',
+    'diary': 'Дневник питания',
+    'food_db': 'Внесение данных о новом продукте',
+    'interactive': 'Выберите тренировку',
+    'timer': 'Таймер',
+    'statistic': 'Статистика тренировки',
+}
 MENU_HELPS = {
     'main': "Enter the name of the food to be entered in the diary\n'n' go to the next day\n'p' go to the previous day\n'l' show food in database\n't' go to sport assistant\n'h' show this help\n'q' quit",
     'food': "Enter the name of the food to be entered in database\n'a' analyze the complex dish\n'r' remove from database\n'h' show this help\n'q' go back",
