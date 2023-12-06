@@ -3,6 +3,8 @@ SQL_CREATE_STMT = {
     'create_diary_stmt': "CREATE TABLE IF NOT EXISTS diary(user INT, date TEXT, title TEXT, value REAL)",
     'create_users_stmt': "CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)",
     'create_dishes_stmt': "CREATE TABLE IF NOT EXISTS dishes(title TEXT, ingredients TEXT, kcal REAL, p REAL, f REAL, c REAL)",
+    'training_params': "CREATE TABLE IF NOT EXISTS training_params(name TEXT, repeats INT, pause TEXT, relax TEXT, on_end TEXT)",
+    'exercises_lists': "CREATE TABLE IF NOT EXISTS exercises_lists(title TEXT, duration TEXT, training_id)",
             }
 
 BNUMS = { 0: ( "#########", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########", "#########", ),
