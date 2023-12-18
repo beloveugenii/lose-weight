@@ -19,11 +19,15 @@ def get_exercises_list_from_db(training_id):
     return exercises_list
 
 
-for key, value in get_training_data_from_db(1).items():
-    print(key + '=', value)
 
+f = open('.tmpfile', 'w')
+
+for key, value in get_training_data_from_db(1).items():
+    f.write(key + '=' + str(value) + '\n')
+
+f.write('\n')
 for title, duration in get_exercises_list_from_db(1):
-    print(title + ':' + duration)
-# получаем данные из бд по номеру тренировки
-# получаем список упражнений по номеру тренировки
+    f.write(title + ':' + duration + '\n')
+f.close()
+
 # создаем текстовый файл куда записыввем все данные так, ятобы получился файл tss
