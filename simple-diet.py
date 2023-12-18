@@ -9,7 +9,6 @@ VERSION = '0.1.6a'
 CONFIG_FILE_PATH = sys.path[0] + '/config'
 DB_NAME = sys.path[0] + '/fc.db'
 SS_PATH = sys.path[0] + '/simple-sport.py'
-ANALYST_PATH = sys.path[0] + '/analyst.py'
 
 current_date = datetime.date.today()
 db_was_changed = False
@@ -23,112 +22,52 @@ def sigint_handler(signum, frame):
     exit(1)
 
 
-# Creating connection to database and creating needed tables
+# Creating connection to database 
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
 
-for stmt in SQL_CREATE_STMT.values():
-    cur.execute(stmt)
+# Creating tables if needed
+create_tables(cur)
 
 # Enable SIG handlers and configure readline
 signal.signal(signal.SIGINT, sigint_handler)
 readline.set_completer_delims('\n')
 
 
-
-########################
-def set_user():
-    while True:
-        # Get user information from DB
-        users = (cur.execute('SELECT rowid, name FROM users')).fetchall()
-    
-        # Prints screen with user information
-        screen(HEADERS['user_ch'],
-               lambda: print_as_table(users, ' ') if users else print('No users found in database'),
-               ['new user creating', 'help', 'quit'], 3
-        )
-
-        uch = input('>> ').lower().strip()
-    
-        if uch.isdigit():
-            # if user input is digit write it into file
-            user_id = int(uch)
-            set_user_id(CONFIG_FILE_PATH, user_id)
-            break
-
-        elif uch == 'n':
-            # if uses input is 'n' asks data for creating new user
-
-            user_data = get_data( { 
-                               'name': 'ваше имя', 
-                               'sex': 'ваш пол', 
-                               'age': 'ваш возраст', 
-                               'height': 'ваш рост', 
-                               'weight': 'ваш вес', 
-                               'activity': 'ваша активность'}, 1)
-
-            cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", user_data)
-            con.commit()
-
-        elif uch == 'q':
-            # if user input is 'q' quit from program
-            exit(0)
-    
-        elif uch == 'h':
-            print(MENU_HELPS['users'])
-
-            a = input()
-    
-        else:
-            print('Unsupported action')
-            sleep(1)
-        
-    return user_id
-#######################
-
 # Try to get id of current user from config file
-user_id = get_user_id(CONFIG_FILE_PATH)
+user_id = get_user_id_from_file(CONFIG_FILE_PATH)
 
 if user_id is None:
-    user_id = set_user()
+    user_id = set_user(cur, CONFIG_FILE_PATH)
+    con.commit()
 
+user_data = convert_user_data(get_user_data_by_id(cur, user_id))
 
-user_data = dict( 
-                map(lambda *args: args, 
-                    ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), 
-                    (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_id,)).fetchone())
-                )
-            )
+food_list = get_food_list(cur)
 
-
-
-
-food_list = cur.execute("SELECT title FROM food").fetchall() + cur.execute("SELECT title FROM dishes").fetchall()
+screen_name = 'diary'
 
 while True:
     clear()
     if db_was_changed:
-        food_list = cur.execute("SELECT title FROM food").fetchall() + cur.execute("SELECT title FROM dishes").fetchall()
+        food_list = get_food_list(cur)
         db_was_changed = False
 
     if user_was_changed:
-        user_data = dict(
-                map(lambda *args: args, 
-                    ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), 
-                    (cur.execute("SELECT rowid, * from users WHERE rowid = ?", (user_id,)).fetchone())
-                )
-            )
+        user_data = convert_user_data(get_user_data_by_id(cur, user_id))
         user_was_changed = False
 
 
-    diary = cur.execute("SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories FROM diary AS d INNER JOIN food AS f WHERE d.title = f.title and date = ? and user = ?", (current_date.strftime('%Y-%m-%d'), user_id)).fetchall()
+    diary = get_data_for_diary(cur, current_date.strftime('%Y-%m-%d'), user_id)
     
     kcal_norm = get_calories_norm(user_data)
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
     
-    screen(HEADERS['diary'] + ' ' + current_date.strftime('%Y-%m-%d'),
-                    lambda: print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(f'No entries at {current_date}'),
-           ['list of food', 'users', 'previous entry', 'next entry', 'simple-sport', 'help', 'quit'], 2)
+    screen(
+        HEADERS[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
+        lambda: 
+        print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(EMPTY_BODY[screen_name] + f' {current_date}'),
+        MENUS_ENTRIES[screen_name],2)
     
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
@@ -140,7 +79,7 @@ while True:
         break
     
     elif action == 'u':
-        user_id = set_user()
+        user_id = set_user(cur, CONFIG_FILE_PATH)
         user_was_changed = True
 
     elif action == 'p':
@@ -157,16 +96,18 @@ while True:
         a = input()
 
     elif action == 'l':
+        screen_name = 'food_db'
         while True:
             clear()
-            res = sorted((cur.execute('select title, cast(kcal as int), cast(p as int), cast(f as int), cast(c as int) from food')).fetchall())
+            res = get_food_data(cur)
 
             # Disable tab-completion
             readline.parse_and_bind('tab: \t')
 
-            screen(HEADERS['food_db'],
-                   lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print("No data in database yet"),
-                    ['analyst', 'remove', 'help', 'quit'], 2)
+            screen(
+                HEADERS[screen_name],
+                lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print(EMPTY_BODY[screen_name]),
+                MENUS_ENTRIES[screen_name], 2)
 
             action = input('>> ').lower().strip()
 
@@ -174,9 +115,40 @@ while True:
                 break
             
             elif action == 'a':
-                print('Not implemented yet')
-                sleep(1)
-                #os.system('python ' + ANALYST_PATH)
+                screen_name = 'analyzer'
+                while True:
+                    dishes_list = get_dishes_list(cur)
+                    # АНАЛИЗАТОР РЕЦЕПТА
+                    screen(
+                        HEADERS[screen_name],
+                        lambda: print(*dishes_list) if dishes_list else print(EMPTY_BODY[screen_name]),
+                        MENUS_ENTRIES[screen_name], 3)
+
+                    action = input('>> ').lower().strip()
+
+                    if action == 'q':
+                        break
+                    elif action == 'c':
+        #  введите список продуктов с указанием количества, помогает табуляция
+        #  проверка, все ли продукты известны
+        #  подсчет данныэ
+        #  введите название блюда
+        #  сохранение в бд dishes
+                        print('Not implemented yet')
+                        sleep(1)
+    
+                    elif action == 'r':
+                        print('Not implemented yet')
+                        sleep(1)
+
+                    elif action == 'h':
+                        print(MENU_HELPS['analyzer'])
+                        a = input()
+    
+                    else:
+                        print('Unsupported action')
+                        sleep(1)
+
 
             elif action == 'h':
                 print(MENU_HELPS['food'])
@@ -188,13 +160,9 @@ while True:
             
             elif action not in 'arqh' and len(action) > 3:
 
-                d = get_data({ 'kcal': 'калорийность', 
-                              'p': 'содержание белков', 
-                              'f': 'содержание жиров',
-                              'c': 'содержание углеводов'}, 1)
+                d = get_data(new_food_params, 1)
                 d['title'] = action
-
-                cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
+                add_new_food(cur, d)
                 con.commit()
                 db_was_changed = True
 
@@ -214,9 +182,7 @@ while True:
             new_entry['title'] = data[0]
             new_entry['value'] = data[1] 
         
-        res = (cur.execute("SELECT title, kcal FROM food WHERE title = :title", new_entry)).fetchone()
-        
-        if res is None:
+        if is_in_db(cur, new_entry['title']) is None:
             print('Похоже, что такого блюда нет в базе\nТребуется ввод дополнительной инофрмации')
             
             # Добавляем новый продукт в БД
@@ -226,13 +192,12 @@ while True:
                           'c': 'содержание углеводов'}, 1)
             
             d['title'] = new_entry['title']
-
-            cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', d)
+            add_new_food(cur, d)
             con.commit()
             db_was_changed = True
         
         # Добавляем запись в дневник
-        cur.execute("INSERT INTO diary VALUES(:user, :date, :title, :value)", new_entry)
+        add_in_diary(cur, new_entry)
         con.commit()
     else:
         print("Unsupported action")

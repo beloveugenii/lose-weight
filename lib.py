@@ -1,10 +1,10 @@
 from libsui import *
-from STRINGS import *
+from strings import *
+from sqls import *
 import re
 from time import sleep
 import sys
 from random import randint, choice
-
 
 def hms_to_sec(time):
     '''takes time and return it in seconds'''
@@ -157,7 +157,7 @@ def parse_line(line):
     except TypeError:
         return None
         
-def get_user_id(file):
+def get_user_id_from_file(file):
     '''try to get user id from file'''
     try:
         f = open(file, 'r')
@@ -169,7 +169,39 @@ def get_user_id(file):
         user_id = None
     return user_id
 
+def set_user(sql_cursor, config_file):
+    screen_name = 'users'
 
+    while True:
+        # Get user information from DB
+        users = get_user_names(sql_cursor)
+    
+        # Prints screen with user information
+        screen(HEADERS[screen_name],
+               lambda: print_as_table(users, ' ') if users else print(EMPTY_BODY[screen_name]),
+               MENUS_ENTRIES[screen_name], 3
+        )
+
+        uch = input('>> ').lower().strip()
+
+        if uch.isdigit():
+          user_id = int(uch)
+          set_user_id(config_file, user_id)
+          return user_id
+
+        elif uch == 'n':
+            add_new_user(cur, get_data(new_user_params, 1))
+
+        elif uch == 'q':
+            exit(0)
+    
+        elif uch == 'h':
+            print(MENU_HELPS[screen_name])
+            a = input()
+
+        else:
+            print('Unsupported action')
+            sleep(1)
 
 def set_user_id(file, user_id):
     '''write userid into file'''
@@ -185,6 +217,9 @@ def get_calories_norm(user):
         return str((basic + 5)  * user['activity'])[:-1]
     elif user['sex'] in 'жЖfF':
         return str((basic - 161) * user['activity'])[:-1]
+
+def convert_user_data(t):
+    return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
 
 
 def isfloat(what):
