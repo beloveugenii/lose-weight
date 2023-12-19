@@ -1,150 +1,47 @@
 from libsui import *
-from strings import *
 from sqls import *
 import re
 from time import sleep
 import sys
-from random import randint, choice
+from libss import *
 
-def hms_to_sec(time):
-    '''takes time and return it in seconds'''
-    try:
-        match = re.search(r'^([\d\.]+)(.*)$', time).groups()
-        mult = 1
-        
-        # without if expreasion it returns multiplied on 60
-        if match[1] == '':
-            mult = 1
-        elif match[1] in 'мm':
-            mult = 60
-        elif match[1] in 'hч':
-            mult = 3600
+HEADERS = {
+    'users': 'Выбор пользователя',
+    'diary': 'Дневник питания',
+    'food_db': 'Внесение данных о новом продукте',
+    'interactive': 'Выберите тренировку',
+    'timer': 'Таймер',
+    'statistic': 'Статистика тренировки',
+    'analyzer': 'Анализатор калорийности рецепта',
+}
 
-        return int(float(match[0]) * mult)
+EMPTY_BODY = {
+    'users': 'No users found in database',
+    'diary': 'No entries',
+    'food_db': 'No data in database yet',
+    'analyzer': 'No entries',
+}
 
-    except AttributeError:
-        return None
+MENUS_ENTRIES = {
+    'users': ('new user creating', 'help', 'quit'),
+    'diary': ('list of food', 'users', 'previous entry', 'next entry', 'simple-sport', 'help', 'quit'),
+    'food_db': ('analyst', 'remove', 'help', 'quit'),
+    'analyzer': ('create a new dish',  'remove an existing dish', 'quit'),
+}
 
-def get_random_speed():
-    '''return random string with speed'''
-    return choice(SPEEDS)
+new_user_params = {'name': 'ваше имя', 'sex': 'ваш пол',
+               'age': 'ваш возраст', 'height': 'ваш рост',
+               'weight': 'ваш вес', 'activity': 'ваша активность'}
 
-def sec_to_hms(sec):
-    '''takes time in seconds'''
-    '''returns formated string with time in hours, minutes and seconds'''
-    h, m = 0, 0
-    res = ''
-    h = sec // 3600
-    sec -= 3600 * h
-    m = sec // 60
-    sec -= 60 * m
+new_food_params = {'kcal': 'калорийность', 'p': 'содержание белков', 
+                   'f': 'содержание жиров','c': 'содержание углеводов'}
 
-    if h > 0:
-        res += '{}ч '.format(h)
-    if m > 0:
-        res += '{}м '.format(m)
-    res += '{}с'.format(sec)
-    return res
-    
-def incr_or_av(some_dict, key):
-    '''try increment value of key in some_dict'''
-    '''create pair with given key if no key in dict'''
-    try:
-        some_dict[key] += 1
-    except KeyError:
-        some_dict[key] = 0
-
-def parse_file(file_name):
-    '''takes a training file name and parses it'''
-    '''return dict with data from .fct file'''
-
-    data = dict.fromkeys(('name', 'repeats', 'pause', 'relax', 'on_end', ), None)
-    data['training_list'] = list()
-
-    file = open(file_name, 'rt')
-    
-    for line in file:
-        # chomp line
-        line = line.strip()
-
-        if line.startswith('#') or len(line) == 0:
-            # skip comments
-            continue
-        
-        try:
-            match = re.search(r'^(.+)([:=]|(?:->))(.+)$', line).groups()
-        
-        except AttributeError:
-            continue
-
-        if match[1] == '=':
-            # line with param splits and set in dict
-            data[match[0]] = match[2]
-
-        else:
-            # line with exercise splits on tuple of title and duration
-            # and appends to list in dict
-            data['training_list'].append((match[0], match[2]))
-    
-    file.close()
-    return data
-
-def prepare_training(data, current_repeat):
-    '''takes data dict and current repeat number'''
-    '''repeats list of exercises for current repeat in right order'''
-    r_list = []
-    for k, v in data['training_list']:
-        k =  k.split('|')
-        v = hms_to_sec(v)
-
-        r_list.append((strings['pause'], hms_to_sec(data['pause'])))
-        r_list.append((k[randint(0, len(k) - 1)], v))
-
-    if current_repeat == 0:
-        r_list[0] = (strings['prepare'], hms_to_sec(data['pause']))
-    else:
-        r_list[0] = (strings['relax'], hms_to_sec(data['relax']))
-
-    if current_repeat == int(data['repeats']) - 1:
-        r_list.append((strings['on_end'], hms_to_sec(data['on_end'])))
-
-    return r_list
-
-def show_statistic(stat_dict):
-    clear()
-    if len(stat_dict) < 2:
-        exit(0)
-    total_counter = 0
-    header(HEADERS['statistic'])
-    for title, duration in stat_dict.items():
-        if title in strings.values():
-            continue
-        total_counter += duration
-        print(title + ': ' + sec_to_hms(duration))
-    
-    if total_counter > 0:
-        print(f'\nОбщее время тренировки: {sec_to_hms(total_counter)}')
-    restore_cursor()
-    a = input()
-
-
-def print_big_nums(num):
-    '''takes a num and prints big digits of it'''
-    l, c  = -1, -1
-    if num > 99:
-        l = num // 100
-        num %= 100
-    c = num // 10
-    num %= 10
-    if c == 0 and l == -1:
-        c = -1
-
-    for i in range(8):
-        print_as_table([(BNUMS[l][i], BNUMS[c][i],BNUMS[num][i],)], ' ')
-
-
-
-# FCRASHER BLOCK
+MENU_HELPS = {
+    'main': "Enter the name of the food to be entered in the diary\n'n' go to the next day\n'p' go to the previous day\n'l' show food in database\n't' go to sport assistant\n'h' show this help\n'q' quit",
+    'food': "Enter the name of the food to be entered in database\n'a' analyze the complex dish\n'r' remove from database\n'h' show this help\n'q' go back",
+    'users': "Type user ID for choosing\n'n' create new user\n'h' show this help\n'q' quit",
+    'analyzer': "Enter the name of the food to be entered in the diary\n'c' create a new dish\n'r' remove an existing dish\n'h' show this help\n'q' quit",
+    }
 
 def parse_line(line):
     '''parse single element of ingredients list'''
