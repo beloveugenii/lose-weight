@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from lib import *
-import libss
+from libs import libss, ui
 import argparse, signal, sys
 from random import choice
 from time import sleep
@@ -28,8 +28,8 @@ STATISTIC = dict()
 args = parser.parse_args()
 
 def sigint_handler(signum, frame):
-    restore_cursor()
-    show_statistic(STATISTIC)
+    ui.restore_cursor()
+    libss.show_statistic(STATISTIC)
     exit(-1)
 
 signal.signal(signal.SIGINT, sigint_handler)
@@ -39,50 +39,50 @@ def interactive():
     '''Interactive mode'''
     r_files = list()
     files = [EXERCISES_DIR + '/' + file.name for file in scandir(EXERCISES_DIR)]
-    clear()
-    header(libss.HEADERS['interactive'])
+    ui.clear()
+    ui.header(libss.HEADERS['interactive'])
     for i in range(len(files)):
-        print(i + 1, parse_file(files[i])['name'])
-    line()
+        print(i + 1, libss.parse_file(files[i])['name'])
+    ui.line()
     a = input('>> ')
     for i in a.split():
         try:
             i = int(i)
         except ValueError:
             continue
-        
+
         r_files.append(files[i - 1])
-    
+
     return r_files
 
 def timer(title):
     timer = 0
-    hide_cursor()
-    
-    clear()
-    header(libss.HEADERS['timer'])
+    ui.hide_cursor()
+
+    ui.clear()
+    ui.header(libss.HEADERS['timer'])
     print(f'Текущее упражнение: {title}' + "\n" * 4)
-    save_cursor_pos()
+    ui.save_cursor_pos()
 
     while True:
-        print_big_nums(timer)
-        incr_or_av(STATISTIC, title)
-        sleep(1)  
+        libss.print_big_nums(timer)
+        libss.incr_or_av(STATISTIC, title)
+        sleep(1)
         timer += 1
-        restore_cursor_pos()
-    
-    show_statistic(STATISTIC)
+        ui.restore_cursor_pos()
+
+    libss.show_statistic(STATISTIC)
     exit(0)
 
 def do_training(file):
-    hide_cursor()
+    ui.hide_cursor()
 
     # Parse every file
-    data = parse_file(file)
+    data = libss.parse_file(file)
 
     for repeat in range(int(data['repeats'])):
         # For every repeat generate exercises list
-        current_list = prepare_training(data, repeat)
+        current_list = libss.prepare_training(data, repeat)
         # And take its length
         current_list_len = len(current_list)
 
@@ -98,17 +98,17 @@ def do_training(file):
                 pass
 
             # main screen with exercise and timer
-            clear()
-            header(f'{data["name"]} {repeat + 1} / {data["repeats"]}')
+            ui.clear()
+            ui.header(f'{data["name"]} {repeat + 1} / {data["repeats"]}')
 
             print(f'Текущее упражнение: {title} {duration}')
-            
-            if title not in strings.values():
+
+            if title not in libss.strings.values():
                 print(f'Скорость выполнения: {choice(("Средне", "Быстро"))}' + '\n' * 3)
             else:
                 print('\n' * 3)
 
-            save_cursor_pos()
+            ui.save_cursor_pos()
             print('\n' * 12)
 
             if i != current_list_len - 1:
@@ -120,9 +120,9 @@ def do_training(file):
                     print(end='')
 
             for t in range(duration, -1, -1):
-                restore_cursor_pos()
-                print_big_nums(t)
-                incr_or_av(STATISTIC, title)
+                ui.restore_cursor_pos()
+                libss.print_big_nums(t)
+                libss.incr_or_av(STATISTIC, title)
                 sleep(1)
 
 # Start timer-mode
@@ -144,5 +144,5 @@ if args.f:
         do_training(file)
 
 # after whole training
-show_statistic(STATISTIC)
+libss.show_statistic(STATISTIC)
 

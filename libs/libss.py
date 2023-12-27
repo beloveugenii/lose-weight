@@ -34,11 +34,11 @@ def incr_or_av(some_dict, key):
         some_dict[key] = 0
 
 def show_statistic(stat_dict):
-    clear()
+    ui.clear()
     if len(stat_dict) < 2:
         exit(0)
     total_counter = 0
-    header(HEADERS['statistic'])
+    ui.header(HEADERS['statistic'])
     for title, duration in stat_dict.items():
         if title in strings.values():
             continue
@@ -47,8 +47,9 @@ def show_statistic(stat_dict):
     
     if total_counter > 0:
         print(f'\nОбщее время тренировки: {sec_to_hms(total_counter)}')
-    restore_cursor()
+    ui.restore_cursor()
     a = input()
+    ui.clear()
 
 def hms_to_sec(time):
     '''takes time and return it in seconds'''
@@ -154,7 +155,7 @@ def print_big_nums(num):
         c = -1
 
     for i in range(8):
-        print_as_table([(BNUMS[l][i], BNUMS[c][i],BNUMS[num][i],)], ' ')
+        ui.print_as_table([(BNUMS[l][i], BNUMS[c][i],BNUMS[num][i],)], ' ')
 
 
 HEADERS = {
