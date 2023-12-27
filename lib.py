@@ -1,70 +1,24 @@
 from libsui import *
 from sqls import *
-import re
 from time import sleep
-import sys
 from libss import *
 
-HEADERS = {
-    'users': 'Выбор пользователя',
-    'diary': 'Дневник питания',
-    'food_db': 'Внесение данных о новом продукте',
-    'interactive': 'Выберите тренировку',
-    'timer': 'Таймер',
-    'statistic': 'Статистика тренировки',
-    'analyzer': 'Анализатор калорийности рецепта',
-}
+HEADERS = { 'users': 'Выбор пользователя', }
 
-EMPTY_BODY = {
-    'users': 'No users found in database',
-    'diary': 'No entries',
-    'food_db': 'No data in database yet',
-    'analyzer': 'No entries',
-}
+EMPTY_BODY = { 'users': 'No users found in database', }
 
-MENUS_ENTRIES = {
-    'users': ('new user creating', 'help', 'quit'),
-    'diary': ('list of food', 'users', 'previous entry', 'next entry', 'simple-sport', 'help', 'quit'),
-    'food_db': ('analyst', 'remove', 'help', 'quit'),
-    'analyzer': ('create a new dish',  'remove an existing dish', 'quit'),
-}
+MENUS_ENTRIES = { 'users': ('new user creating', 'help', 'quit'), }
 
-new_user_params = {'name': 'ваше имя', 'sex': 'ваш пол',
-               'age': 'ваш возраст', 'height': 'ваш рост',
-               'weight': 'ваш вес', 'activity': 'ваша активность'}
+MENU_HELPS = { 'users': "Type user ID for choosing\n'n' create new user\n'h' show this help\n'q' quit", }
+
+new_user_params = {
+    'name': 'ваше имя', 'sex': 'ваш пол',
+    'age': 'ваш возраст', 'height': 'ваш рост',
+    'weight': 'ваш вес', 'activity': 'ваша активность'
+}
 
 new_food_params = {'kcal': 'калорийность', 'p': 'содержание белков', 
                    'f': 'содержание жиров','c': 'содержание углеводов'}
-
-MENU_HELPS = {
-    'main': "Enter the name of the food to be entered in the diary\n'n' go to the next day\n'p' go to the previous day\n'l' show food in database\n't' go to sport assistant\n'h' show this help\n'q' quit",
-    'food': "Enter the name of the food to be entered in database\n'a' analyze the complex dish\n'r' remove from database\n'h' show this help\n'q' go back",
-    'users': "Type user ID for choosing\n'n' create new user\n'h' show this help\n'q' quit",
-    'analyzer': "Enter the name of the food to be entered in the diary\n'c' create a new dish\n'r' remove an existing dish\n'h' show this help\n'q' quit",
-    }
-
-def parse_line(line):
-    '''parse single element of ingredients list'''
-    '''return tuple with title and value, or empty tuple'''
-    pat = r'^(.+?)\s*(\d+(?:\.\d+)?)$'
-    try:
-        matched = re.search(pat, str(line))
-        return (matched[1], matched[2],)
-    
-    except TypeError:
-        return None
-        
-def get_user_id_from_file(file):
-    '''try to get user id from file'''
-    try:
-        f = open(file, 'r')
-        for line in f:
-            user_id = line.split('=')[1].strip()
-        f.close()
-    
-    except FileNotFoundError:
-        user_id = None
-    return user_id
 
 def set_user(sql_cursor, config_file):
     screen_name = 'users'
@@ -83,14 +37,15 @@ def set_user(sql_cursor, config_file):
 
         if uch.isdigit():
           user_id = int(uch)
-          set_user_id(config_file, user_id)
+          f = open(config_file, 'a')
+          f.write('uid='+str(user_id)+'\n')
+          f.close()
           return user_id
 
         elif uch == 'n':
-            add_new_user(cur, get_data(new_user_params, 1))
+            add_new_user(sql_cursor, get_data(new_user_params, 1))
 
-        elif uch == 'q':
-            exit(0)
+        elif uch == 'q': exit(0)
     
         elif uch == 'h':
             print(MENU_HELPS[screen_name])
@@ -100,20 +55,8 @@ def set_user(sql_cursor, config_file):
             print('Unsupported action')
             sleep(1)
 
-def set_user_id(file, user_id):
-    '''write userid into file'''
-    f = open(file, 'a')
-    f.write('uid='+str(user_id)+'\n')
-    f.close()
 
-def get_calories_norm(user):
-    '''calculate caloriris norm per day'''
-    basic = 10 * user['weight'] + 6.25 * user['height'] - 5 * user['age']
 
-    if user['sex'] in 'мМmM':
-        return str((basic + 5)  * user['activity'])[:-1]
-    elif user['sex'] in 'жЖfF':
-        return str((basic - 161) * user['activity'])[:-1]
 
 def convert_user_data(t):
     return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )

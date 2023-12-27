@@ -155,3 +155,11 @@ def print_big_nums(num):
 
     for i in range(8):
         print_as_table([(BNUMS[l][i], BNUMS[c][i],BNUMS[num][i],)], ' ')
+
+
+HEADERS = {
+    'interactive': 'Выберите тренировку',
+    'timer': 'Таймер',
+    'statistic': 'Статистика тренировки',
+}
+

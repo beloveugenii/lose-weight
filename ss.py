@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from lib import *
+import libss
+import argparse, signal, sys
 from random import choice
 from time import sleep
 from os import scandir
-import argparse
-import signal
 
 PROG_NAME = 'simple-sport'
 VERSION = '0.1.6a'
@@ -40,7 +40,7 @@ def interactive():
     r_files = list()
     files = [EXERCISES_DIR + '/' + file.name for file in scandir(EXERCISES_DIR)]
     clear()
-    header(HEADERS['interactive'])
+    header(libss.HEADERS['interactive'])
     for i in range(len(files)):
         print(i + 1, parse_file(files[i])['name'])
     line()
@@ -60,7 +60,7 @@ def timer(title):
     hide_cursor()
     
     clear()
-    header(HEADERS['timer'])
+    header(libss.HEADERS['timer'])
     print(f'Текущее упражнение: {title}' + "\n" * 4)
     save_cursor_pos()
 
