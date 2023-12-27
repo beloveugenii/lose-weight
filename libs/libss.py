@@ -1,6 +1,6 @@
 ## SIMPLE-SPORT library file
 
-from libsui import *
+from libs import *
 import re
 from random import randint
 

@@ -3,11 +3,13 @@
 import sqlite3, datetime, readline, signal, sys
 from os import system
 from lib import *
-import libsd
+from libs import libsd, ui, completer as c
+#  from completer import *
+from sqls import *
 
 PROG_NAME = 'simple-diet'
 VERSION = '0.1.6a'
-CONFIG_FILE_PATH = sys.path[0] + '/config'
+CONFIG_FILE_PATH = sys.path[0] + '/.config'
 DB_NAME = sys.path[0] + '/fc.db'
 SS_PATH = sys.path[0] + '/ss.py'
 
@@ -18,7 +20,7 @@ user_was_changed = False
 # Обработчик нажатия Ctrl-C
 def sigint_handler(signum, frame):
     signame = signal.Signals(signum).name
-    clear()
+    ui.clear()
     print(f'Catched {signame}')
     exit(1)
 
@@ -32,7 +34,7 @@ create_tables(cur)
 
 # Enable SIG handlers and configure readline
 signal.signal(signal.SIGINT, sigint_handler)
-readline.set_completer_delims('\n')
+readline.set_completer_delims('\n,')
 
 
 # Try to get id of current user from config file
@@ -40,7 +42,6 @@ user_id = libsd.get_user_id_from_file(CONFIG_FILE_PATH)
 
 if user_id is None:
     user_id = set_user(cur, CONFIG_FILE_PATH)
-    
     con.commit()
 
 user_data = convert_user_data(get_user_data_by_id(cur, user_id))
@@ -50,7 +51,7 @@ food_list = get_food_list(cur)
 
 while True:
     screen_name = 'diary'
-    clear()
+    ui.clear()
     if db_was_changed:
         food_list = get_food_list(cur)
         db_was_changed = False
@@ -64,15 +65,15 @@ while True:
     kcal_norm = libsd.get_calories_norm(user_data)
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
-    screen(
+    ui.screen(
         libsd.HEADERS[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
         lambda:
-        print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(libsd.EMPTY_BODY[screen_name] + f' {current_date}'),
+        ui.print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(libsd.EMPTY_BODY[screen_name] + f' {current_date}'),
         libsd.MENUS_ENTRIES[screen_name], 2)
     
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
-    readline.set_completer(completer([food[0] for food in food_list]).complete)
+    readline.set_completer(c.Completer([food[0] for food in food_list]).complete)
 
     action = input('>> ').lower().strip()
 
@@ -92,15 +93,15 @@ while True:
     elif action == 'l':
         screen_name = 'food_db'
         while True:
-            clear()
+            ui.clear()
             res = get_food_data(cur)
 
             # Disable tab-completion
             readline.parse_and_bind('tab: \t')
 
-            screen(
+            ui.screen(
                 libsd.HEADERS[screen_name],
-                lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print(libsd.EMPTY_BODY[screen_name]),
+                lambda: ui.print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print(libsd.EMPTY_BODY[screen_name]),
                 libsd.MENUS_ENTRIES[screen_name], 2)
 
             action = input('>> ').lower().strip()
@@ -127,7 +128,7 @@ while True:
                 #  while True:
                     #  dishes_list = get_dishes_list(cur)
                     #  # АНАЛИЗАТОР РЕЦЕПТА
-                    #  screen(
+                    #  ui.screen(
                         #  libsd.HEADERS[screen_name],
                         #  lambda: print(*dishes_list) if dishes_list else print(libsd.EMPTY_BODY[screen_name]),
                         #  libsd.MENUS_ENTRIES[screen_name], 3)

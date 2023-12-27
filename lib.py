@@ -1,7 +1,6 @@
-from libsui import *
+from libs import libsd, ui
 from sqls import *
 from time import sleep
-from libss import *
 
 HEADERS = { 'users': 'Выбор пользователя', }
 
@@ -28,8 +27,8 @@ def set_user(sql_cursor, config_file):
         users = get_user_names(sql_cursor)
     
         # Prints screen with user information
-        screen(HEADERS[screen_name],
-               lambda: print_as_table(users, ' ') if users else print(EMPTY_BODY[screen_name]),
+        ui.screen(HEADERS[screen_name],
+               lambda: ui.print_as_table(users, ' ') if users else print(EMPTY_BODY[screen_name]),
                MENUS_ENTRIES[screen_name], 3
         )
 
