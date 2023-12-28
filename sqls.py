@@ -1,16 +1,17 @@
 # This file defines subroutins, which working with SQLite.Cursor objects and returns some data from DB
 
-def create_tables(sql_cursor):
-    for stmt in [
-            "CREATE TABLE IF NOT EXISTS food(title TEXT, kcal REAL, p REAL, f REAL, c REAL)",
-            "CREATE TABLE IF NOT EXISTS diary(user INT, date TEXT, title TEXT, value REAL)",
-            "CREATE TABLE IF NOT EXISTS users(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)",
-            "CREATE TABLE IF NOT EXISTS dishes(title TEXT, ingredients TEXT, kcal REAL, p REAL, f REAL, c REAL)"]:
-        sql_cursor.execute(stmt)
+libss = {'sqls':
+         { 'training_params': 'SELECT rowid, * FROM trainings WHERE rowid = ?',
+          'training_list': 'WITH tmp AS (SELECT exer_id, duration FROM exercises_lists WHERE training_id = ?) SELECT e.title, tmp.duration FROM tmp INNER JOIN exercises AS e WHERE tmp.exer_id = e.rowid',
+          },
+         'strings':
+         { 'params': ('name', 'repeats', 'pause', 'relax', 'on_end'),
 
+         },
+         }
 
 def get_food_list(sql_cursor):
-    return sql_cursor.execute('SELECT title FROM food').fetchall() + sql_cursor.execute('SELECT title FROM dishes').fetchall()
+    return sql_cursor.execute('SELECT title FROM food').fetchall()# + sql_cursor.execute('SELECT title FROM dishes').fetchall()
 
 def get_dishes_list(sql_cursor):
     return sql_cursor.execute('SELECT title, kcal FROM dishes').fetchall()
@@ -24,9 +25,9 @@ def get_user_data_by_id(sql_cursor, user_id):
 def get_data_for_diary(sql_cursor, formated_date, user_id):
     return sql_cursor.execute(
         '''
-        SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories 
-        FROM diary AS d 
-        INNER JOIN food AS f 
+        SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories
+        FROM diary AS d
+        INNER JOIN food AS f
         WHERE d.title = f.title AND date = ? AND user = ?
         ''', (formated_date, user_id)).fetchall()
 

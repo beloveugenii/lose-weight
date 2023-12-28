@@ -86,12 +86,14 @@ def menu(array, cols):
 
     if len(array) % 2 == 1 and cols % 2 == 0:
         array.append('')
-    
     # convert list to list of tuples
     while len(array) > 0:
         tmp = []
         for t in range(cols):
-            tmp.append(array.pop(0))
+            try:
+                tmp.append(array.pop(0))
+            except:
+                pass
         menu_lst.append(tuple(tmp))
 
     # print list of tuples like menu

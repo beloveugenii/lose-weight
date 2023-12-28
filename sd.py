@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 
 import sqlite3, datetime, readline, signal, sys
-from os import system
+import os
 from lib import *
-from libs import libsd, ui, completer as c
-#  from completer import *
+from libs import libsd, ui, completer as c, sql_create_tables
 from sqls import *
 
 PROG_NAME = 'simple-diet'
 VERSION = '0.1.6a'
 CONFIG_FILE_PATH = sys.path[0] + '/.config'
 DB_NAME = sys.path[0] + '/fc.db'
+
+if not os.path.exists(DB_NAME):
+    sql_table_creater.create(DB_NAME)
+
 SS_PATH = sys.path[0] + '/ss.py'
 
 current_date = datetime.date.today()
@@ -30,7 +33,7 @@ con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
 
 # Creating tables if needed
-create_tables(cur)
+#  create_tables(cur)
 
 # Enable SIG handlers and configure readline
 signal.signal(signal.SIGINT, sigint_handler)
@@ -80,7 +83,7 @@ while True:
     if action == 'q': break
     elif action == 'p': current_date -= datetime.timedelta(days = 1)
     elif action == 'n': current_date += datetime.timedelta(days = 1)
-    elif action == 's': system('python3 ' + SS_PATH + ' -i')
+    elif action == 's': os.system('python3 ' + SS_PATH + ' -i')
 
     elif action == 'h':
         print(libsd.MENU_HELPS[screen_name])

@@ -1,14 +1,30 @@
 #!/usr/bin/env python3
 from lib import *
-from libs import libss, ui
+from libs import libss, ui, sql_create_tables
 import argparse, signal, sys
 from random import choice
 from time import sleep
-from os import scandir
+import os
+import sqlite3
+import sqls
 
 PROG_NAME = 'simple-sport'
 VERSION = '0.1.6a'
 EXERCISES_DIR = sys.path[0] + '/basics'
+
+DB_NAME = sys.path[0] + '/fc.db'
+
+if not os.path.exists(DB_NAME):
+    sql_table_creater.create(DB_NAME)
+
+con = sqlite3.connect(DB_NAME)
+cur = con.cursor()
+
+#  cur.execute('insert into trainings values("Тестовая тренировка", 2, "2с", "5с", "10с")')
+#  cur.execute('insert into exercises values ("Тест1", "Любая"), ("Тест2", "Любая")')
+#  cur.execute("insert into exercises_lists values(1, '10', 1), (1, '5', 1), (2, '4', 1)")
+
+#  params_strings = sqls.libss['strings']['params']
 
 parser = argparse.ArgumentParser(description='Minimalistic console sport assistant',)
 
@@ -34,26 +50,60 @@ def sigint_handler(signum, frame):
 
 signal.signal(signal.SIGINT, sigint_handler)
 
+def get_training_from_db(training_id):
+    training_params = cur.execute(sqls.libss['sqls']['training_params'], (training_id,)).fetchone()
+    exercises_list = list()
+
+    if training_params is None:
+        return training_params
+    else:
+        training = dict(map(lambda *args: args, sqls.libss['strings']['params'], training_params[1:]))
+
+    training['list'] = cur.execute(sqls.libss['sqls']['training_list'], (training_id,)).fetchall()
+
+    if training['list'] is None:
+        return None
+    else:
+      return training
+
+print(get_training_from_db(1))
+
 
 def interactive():
     '''Interactive mode'''
     r_files = list()
-    files = [EXERCISES_DIR + '/' + file.name for file in scandir(EXERCISES_DIR)]
-    ui.clear()
-    ui.header(libss.HEADERS['interactive'])
-    for i in range(len(files)):
-        print(i + 1, libss.parse_file(files[i])['name'])
-    ui.line()
-    a = input('>> ')
-    for i in a.split():
-        try:
-            i = int(i)
-        except ValueError:
-            continue
+    #files = [EXERCISES_DIR + '/' + file.name for file in scandir(EXERCISES_DIR)]
+    #tr_from_db = cur.execute("SELECT name FROM trainings").fetchall()
+    files = [EXERCISES_DIR + '/' + file.name for file in os.scandir(EXERCISES_DIR)] + cur.execute("SELECT name FROM trainings").fetchall()
+    while True:
+        ui.clear()
+        ui.header(libss.HEADERS['interactive'])
 
-        r_files.append(files[i - 1])
+        for i in range(len(files)):
+            try:
+                print(i + 1, libss.parse_file(files[i])['name'])
+            except:
+                print(i + 1, files[i])
 
-    return r_files
+
+        ui.menu(('create', 'remove', 'edit', 'quit',), 4)
+
+        a = input('>> ')
+        if a.startswith('q'):
+            exit(0)
+        elif a in ('cer'):
+            print('Not implemented yet')
+            sleep(1)
+        else:
+            for i in a.split():
+                try:
+                    i = int(i)
+                except ValueError:
+                    continue
+
+            r_files.append(files[i - 1])
+
+            return r_files
 
 def timer(title):
     timer = 0
@@ -136,7 +186,7 @@ if args.i:
         for file in choosed_files:
             do_training(file)
     else:
-        empty_start(PROG_NAME)
+        libss.empty_start(PROG_NAME)
 
 # Command-line mode
 if args.f:
