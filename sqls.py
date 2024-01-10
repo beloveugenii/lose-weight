@@ -1,15 +1,5 @@
 # This file defines subroutins, which working with SQLite.Cursor objects and returns some data from DB
 
-libss = {'sqls':
-         { 'training_params': 'SELECT rowid, * FROM trainings WHERE rowid = ?',
-          'training_list': 'WITH tmp AS (SELECT exer_id, duration FROM exercises_lists WHERE training_id = ?) SELECT e.title, tmp.duration FROM tmp INNER JOIN exercises AS e WHERE tmp.exer_id = e.rowid',
-          },
-         'strings':
-         { 'params': ('name', 'repeats', 'pause', 'relax', 'on_end'),
-
-         },
-         }
-
 def get_food_list(sql_cursor):
     return sql_cursor.execute('SELECT title FROM food').fetchall()# + sql_cursor.execute('SELECT title FROM dishes').fetchall()
 

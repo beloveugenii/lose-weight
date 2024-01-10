@@ -1,4 +1,4 @@
-from libs import libsd, ui
+from libs import libsd, ui, helps
 from sqls import *
 from time import sleep
 
@@ -7,8 +7,6 @@ HEADERS = { 'users': 'Выбор пользователя', }
 EMPTY_BODY = { 'users': 'No users found in database', }
 
 MENUS_ENTRIES = { 'users': ('new user creating', 'help', 'quit'), }
-
-MENU_HELPS = { 'users': "Type user ID for choosing\n'n' create new user\n'h' show this help\n'q' quit", }
 
 new_user_params = {
     'name': 'ваше имя', 'sex': 'ваш пол',
@@ -25,7 +23,7 @@ def set_user(sql_cursor, config_file):
     while True:
         # Get user information from DB
         users = get_user_names(sql_cursor)
-    
+
         # Prints screen with user information
         ui.screen(HEADERS[screen_name],
                lambda: ui.print_as_table(users, ' ') if users else print(EMPTY_BODY[screen_name]),
@@ -36,7 +34,7 @@ def set_user(sql_cursor, config_file):
 
         if uch.isdigit():
           user_id = int(uch)
-          f = open(config_file, 'a')
+          f = open(config_file, 'w')
           f.write('uid='+str(user_id)+'\n')
           f.close()
           return user_id
@@ -45,16 +43,10 @@ def set_user(sql_cursor, config_file):
             add_new_user(sql_cursor, get_data(new_user_params, 1))
 
         elif uch == 'q': exit(0)
-    
-        elif uch == 'h':
-            print(MENU_HELPS[screen_name])
-            a = input()
 
-        else:
-            print('Unsupported action')
-            sleep(1)
+        elif uch == 'h': helps.help(screen_name)
 
-
+        else: helps.help('ua', 1)
 
 
 def convert_user_data(t):
@@ -74,12 +66,10 @@ def get_data(params, delay):
             while True:
                 it = input(params[key] + ': ')
                 if len(it) < 2 and not key == 'sex':
-                    print('Слишком короткая строка')
-                    sleep(delay)
+                    helps.help('small_str', delay)
                 else:
                     if key == 'sex' and it not in 'мМжЖmMfF':
-                        print('Требуется обозначение пола: [мМ или жЖ]')
-                        sleep(delay)
+                        helps.help('need_gender', delay)
                     else:
                         data[key] = it
                         break
@@ -97,8 +87,7 @@ def get_data(params, delay):
                     data[key] = float(it)
                     break
                 except ValueError:
-                    print('Здесь требуется число')
-                    sleep(delay)
+                    helps.help('need_number', delay)
 
     return data
 

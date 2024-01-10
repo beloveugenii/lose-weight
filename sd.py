@@ -3,7 +3,7 @@
 import sqlite3, datetime, readline, signal, sys
 import os
 from lib import *
-from libs import libsd, ui, completer as c, sql_create_tables
+from libs import libsd, ui, completer as c, sql_create_tables, helps
 from sqls import *
 
 PROG_NAME = 'simple-diet'
@@ -73,7 +73,7 @@ while True:
         lambda:
         ui.print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(libsd.EMPTY_BODY[screen_name] + f' {current_date}'),
         libsd.MENUS_ENTRIES[screen_name], 2)
-    
+
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
     readline.set_completer(c.Completer([food[0] for food in food_list]).complete)
@@ -84,10 +84,7 @@ while True:
     elif action == 'p': current_date -= datetime.timedelta(days = 1)
     elif action == 'n': current_date += datetime.timedelta(days = 1)
     elif action == 's': os.system('python3 ' + SS_PATH + ' -i')
-
-    elif action == 'h':
-        print(libsd.MENU_HELPS[screen_name])
-        a = input()
+    elif action == 'h': helps.help(screen_name)
 
     elif action == 'u':
         user_id = set_user(cur, CONFIG_FILE_PATH)
@@ -108,15 +105,10 @@ while True:
                 libsd.MENUS_ENTRIES[screen_name], 2)
 
             action = input('>> ').lower().strip()
+
             if action == 'q': break
-
-            elif action == 'h':
-                print(libsd.MENU_HELPS[screen_name])
-                a = input()
-
-            elif action == 'r':
-                print('Not implemented yet')
-                sleep(1)
+            elif action == 'h': helps.help(screen_name)
+            elif action in 'ar': helps.help('not_impl', 1)
 
             elif action not in 'arqh' and len(action) > 3:
 
@@ -162,9 +154,7 @@ while True:
 
 
            
-            else:
-                print('Unsupported action')
-                sleep(1)
+            else: helps.help('ua', 1)
 
     elif action not in 'lpnqht' and len(action) > 2:
         new_entry = { 'date': current_date, 'user': user_id, }
@@ -189,11 +179,10 @@ while True:
                 add_new_food(cur, d)
                 con.commit()
                 db_was_changed = True
-        
+
             # Добавляем запись в дневник
             add_in_diary(cur, new_entry)
             con.commit()
-    else:
-        print("Unsupported action")
-        sleep(1)
+
+    else: helps.help('ua', 1)
 

@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 from lib import *
-from libs import libss, ui, sql_create_tables
+from libs import libss, ui, sql_create_tables, helps
 import argparse, signal, sys
 from random import choice
 from time import sleep
 import os
 import sqlite3
-import sqls
 
 PROG_NAME = 'simple-sport'
 VERSION = '0.1.6a'
 EXERCISES_DIR = sys.path[0] + '/basics'
-
 DB_NAME = sys.path[0] + '/fc.db'
+DELAY = 1
 
 if not os.path.exists(DB_NAME):
     sql_table_creater.create(DB_NAME)
@@ -24,8 +23,6 @@ cur = con.cursor()
 #  cur.execute('insert into exercises values ("Тест1", "Любая"), ("Тест2", "Любая")')
 #  cur.execute("insert into exercises_lists values(1, '10', 1), (1, '5', 1), (2, '4', 1)")
 
-#  params_strings = sqls.libss['strings']['params']
-
 parser = argparse.ArgumentParser(description='Minimalistic console sport assistant',)
 
 parser.add_argument('-f', action='append', nargs='+', help='start training from files')
@@ -34,50 +31,47 @@ parser.add_argument('-v','--version', action='version', version=f'{PROG_NAME} {V
 #  parser.add_argument('-s', '--sound', action='store_true', help='enables sound in Termux')
 parser.add_argument('-i', action='store_true', help='start an interactive mode')
 
-# Dict for statistic
-STATISTIC = dict()
 
 #  ВКЛЮЧЕНИЕ ЗВУКА В ТЕРМУКСЕ
 #  ВЫКЛЮЧЕНИЕ ЗВУКА ПРИ ПРЕРЫВАНИИ  ИЛИ ЗАВЕРШЕНИИ РАБОТЫ
 #  ПОКАЗЫВАТЬ ПРОГРАММУ ТРЕНИРОВКИ
-
-args = parser.parse_args()
 
 def sigint_handler(signum, frame):
     ui.restore_cursor()
     libss.show_statistic(STATISTIC)
     exit(-1)
 
-signal.signal(signal.SIGINT, sigint_handler)
 
 def get_training_from_db(training_id):
-    training_params = cur.execute(sqls.libss['sqls']['training_params'], (training_id,)).fetchone()
+    training_params = cur.execute(libss.SQLS['training_params'], (training_id,)).fetchone()
     exercises_list = list()
 
     if training_params is None:
         return training_params
     else:
-        training = dict(map(lambda *args: args, sqls.libss['strings']['params'], training_params[1:]))
+        training = dict(map(lambda *args: args, libss.STRINGS['params'], training_params[1:]))
 
-    training['list'] = cur.execute(sqls.libss['sqls']['training_list'], (training_id,)).fetchall()
+    training['list'] = cur.execute(libss.SQLS['training_list'], (training_id,)).fetchall()
 
     if training['list'] is None:
         return None
     else:
       return training
 
-print(get_training_from_db(1))
+#  print(get_training_from_db(1))
 
 
 def interactive():
+    screen_name = 'interactive'
     '''Interactive mode'''
     r_files = list()
-    #files = [EXERCISES_DIR + '/' + file.name for file in scandir(EXERCISES_DIR)]
-    #tr_from_db = cur.execute("SELECT name FROM trainings").fetchall()
-    files = [EXERCISES_DIR + '/' + file.name for file in os.scandir(EXERCISES_DIR)] + cur.execute("SELECT name FROM trainings").fetchall()
+
+    files = [EXERCISES_DIR + '/' + file.name for file in os.scandir(EXERCISES_DIR)]
+    #  files = [EXERCISES_DIR + '/' + file.name for file in os.scandir(EXERCISES_DIR)] + cur.execute("SELECT name FROM trainings").fetchall()
+
     while True:
         ui.clear()
-        ui.header(libss.HEADERS['interactive'])
+        ui.header(libss.HEADERS[screen_name])
 
         for i in range(len(files)):
             try:
@@ -85,23 +79,20 @@ def interactive():
             except:
                 print(i + 1, files[i])
 
-
-        ui.menu(('create', 'remove', 'edit', 'quit',), 4)
+        ui.menu(libss.MENU_ENTRIES[screen_name], 4)
 
         a = input('>> ')
-        if a.startswith('q'):
-            exit(0)
-        elif a in ('cer'):
-            print('Not implemented yet')
-            sleep(1)
-        else:
-            for i in a.split():
-                try:
-                    i = int(i)
-                except ValueError:
-                    continue
 
-            r_files.append(files[i - 1])
+        if a == 'q': exit(0)
+        elif a in ('cer'): helps.help('not_impl', 1)
+        elif a == 'h': helps.help(screen_name)
+        else:
+            for i in [int(l) for l in a.split() if l.isnumeric()]:
+                if i > 0 and i <= len(files):
+                    r_files.append(files[i - 1])
+                else:
+                    print(f"The file with the number '{i}' does not exist")
+                    sleep(1)
 
             return r_files
 
@@ -153,8 +144,8 @@ def do_training(file):
 
             print(f'Текущее упражнение: {title} {duration}')
 
-            if title not in libss.strings.values():
-                print(f'Скорость выполнения: {choice(("Средне", "Быстро"))}' + '\n' * 3)
+            if title not in libss.STRINGS['params'].values():
+                print(f'Скорость выполнения: {choice(libss.STRINGS["speeds"])}' + '\n' * 3)
             else:
                 print('\n' * 3)
 
@@ -165,7 +156,7 @@ def do_training(file):
                 print(f'Следующее упражнение: {next_title} {next_duration}',end='')
             else:
                 if repeat != int(data['repeats']) - 1:
-                    print(strings['relax'], end='')
+                    print(libss.STRINGS['params']['relax'], end='')
                 else:
                     print(end='')
 
@@ -173,7 +164,14 @@ def do_training(file):
                 ui.restore_cursor_pos()
                 libss.print_big_nums(t)
                 libss.incr_or_av(STATISTIC, title)
-                sleep(1)
+                sleep(DELAY)
+
+signal.signal(signal.SIGINT, sigint_handler)
+args = parser.parse_args()
+
+# Dict for statistic
+STATISTIC = dict()
+FILES = list()
 
 # Start timer-mode
 if args.t:
@@ -181,18 +179,17 @@ if args.t:
 
 # Start interactive mode
 if args.i:
-    choosed_files = interactive()
-    if len(choosed_files) > 0:
-        for file in choosed_files:
-            do_training(file)
-    else:
-        libss.empty_start(PROG_NAME)
+    FILES = interactive()
+elif args.f:
+    FILES = args.f[0]
 
-# Command-line mode
-if args.f:
-    for file in args.f[0]:
-        do_training(file)
 
-# after whole training
-libss.show_statistic(STATISTIC)
+
+
+if len(FILES) > 0:
+    for f in FILES:
+        do_training(f)
+    libss.show_statistic(STATISTIC)
+else:
+    libss.empty_start(PROG_NAME)
 
