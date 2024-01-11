@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lib import *
+#  from lib import *
 from libs import libss, ui, sql_create_tables, helps
 import argparse, signal, sys
 from random import choice

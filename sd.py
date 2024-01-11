@@ -2,7 +2,7 @@
 
 import sqlite3, datetime, readline, signal, sys
 import os
-from lib import *
+from users import *
 from libs import libsd, ui, completer as c, sql_create_tables, helps
 from sqls import *
 
@@ -112,6 +112,8 @@ while True:
 
             elif action not in 'arqh' and len(action) > 3:
 
+                new_food_params = {'kcal': 'калорийность', 'p': 'содержание белков', 
+                   'f': 'содержание жиров','c': 'содержание углеводов'}
                 d = get_data(new_food_params, 1)
                 d['title'] = action
                 add_new_food(cur, d)

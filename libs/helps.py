@@ -16,6 +16,8 @@ messages = {
         "Enter the name of the food to be entered in database\n'a' analyze the complex dish\n'r' remove from database\n'h' show this help\n'q' go back",
     'analyzer':
         "Enter the name of the food to be entered in the diary\n'c' create a new dish\n'r' remove an existing dish\n'h' show this help\n'q' quit",
+    'activity':
+        "1.2 – минимальная активность, сидячая работа, не требующая значительных физических нагрузок\n1.375 – слабый уровень активности: интенсивные упражнения не менее 20 минут один-три раза в неделю\n1.55 – умеренный уровень активности: интенсивная тренировка не менее 30-60 мин три-четыре раза в неделю\n1.7 – тяжелая или трудоемкая активность: интенсивные упражнения и занятия спортом 5-7 дней в неделю или трудоемкие занятия\n1.9 – экстремальный уровень: включает чрезвычайно активные и/или очень энергозатратные виды деятельности",
 }
 
 def help(*args):

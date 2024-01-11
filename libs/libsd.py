@@ -46,10 +46,4 @@ MENUS_ENTRIES = {
     'analyzer': ('create a new dish',  'remove an existing dish', 'quit'),
 }
 
-MENU_HELPS = {
-    'diary': "Enter the name of the food to be entered in the diary\n'n' go to the next day\n'p' go to the previous day\n'l' show food in database\n't' go to sport assistant\n'h' show this help\n'q' quit",
-    'food_db': "Enter the name of the food to be entered in database\n'a' analyze the complex dish\n'r' remove from database\n'h' show this help\n'q' go back",
-    'analyzer': "Enter the name of the food to be entered in the diary\n'c' create a new dish\n'r' remove an existing dish\n'h' show this help\n'q' quit",
-    }
-
 
