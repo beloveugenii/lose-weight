@@ -11,7 +11,7 @@ PROG_NAME = 'simple-sport'
 VERSION = '0.1.6a'
 EXERCISES_DIR = sys.path[0] + '/basics'
 DB_NAME = sys.path[0] + '/fc.db'
-DELAY = 1
+DELAY = 0
 
 if not os.path.exists(DB_NAME):
     sql_table_creater.create(DB_NAME)
@@ -58,26 +58,28 @@ def get_training_from_db(training_id):
     else:
       return training
 
-#  print(get_training_from_db(1))
 
 
 def interactive():
     screen_name = 'interactive'
     '''Interactive mode'''
     r_files = list()
+    r_ids = list()
 
     files = [EXERCISES_DIR + '/' + file.name for file in os.scandir(EXERCISES_DIR)]
-    #  files = [EXERCISES_DIR + '/' + file.name for file in os.scandir(EXERCISES_DIR)] + cur.execute("SELECT name FROM trainings").fetchall()
+
+    from_db = cur.execute("SELECT name FROM trainings").fetchall()
 
     while True:
         ui.clear()
         ui.header(libss.HEADERS[screen_name])
 
         for i in range(len(files)):
-            try:
-                print(i + 1, libss.parse_file(files[i])['name'])
-            except:
-                print(i + 1, files[i])
+            print(i + 1, libss.parse_file(files[i])['name'])
+        print()
+        for i in range(len(from_db)):
+            print(i + 1, get_training_from_db(i + 1)['name'])
+            #  print(i + 1, str(*files[i]).title())
 
         ui.menu(libss.MENU_ENTRIES[screen_name], 4)
 

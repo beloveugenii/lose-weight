@@ -10,11 +10,11 @@ PROG_NAME = 'simple-diet'
 VERSION = '0.1.6a'
 CONFIG_FILE_PATH = sys.path[0] + '/.config'
 DB_NAME = sys.path[0] + '/fc.db'
+SS_PATH = sys.path[0] + '/ss.py'
 
 if not os.path.exists(DB_NAME):
     sql_table_creater.create(DB_NAME)
 
-SS_PATH = sys.path[0] + '/ss.py'
 
 current_date = datetime.date.today()
 db_was_changed = False
@@ -28,9 +28,6 @@ def sigint_handler(signum, frame):
     exit(1)
 
 
-# Creating connection to database 
-con = sqlite3.connect(DB_NAME)
-cur = con.cursor()
 
 # Creating tables if needed
 #  create_tables(cur)
