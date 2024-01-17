@@ -15,6 +15,8 @@ SS_PATH = sys.path[0] + '/ss.py'
 if not os.path.exists(DB_NAME):
     sql_table_creater.create(DB_NAME)
 
+con = sqlite3.connect(DB_NAME)
+cur = con.cursor()
 
 current_date = datetime.date.today()
 db_was_changed = False
