@@ -69,14 +69,4 @@ Simple-diet - небольшая консольная утилита, позво
 
 <!-- The vertical line symbol '|' makes it possible to randomly select an exercise. -->
 
-    <!-- name='Warm-up' -->
-    <!-- pause=5s -->
-    <!-- relax=0s -->
-    <!-- repiats=1 -->
-    <!-- on\_end=10s -->
-
-    <!-- ex1|ex2|ex3:30s -->
-    <!-- ex2|ex5->0.5m -->
-    <!-- ex3->40s -->
-    <!-- ex5:1m -->
 
