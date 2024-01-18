@@ -2,7 +2,7 @@
 
 import sqlite3, datetime, readline, os, signal, sys
 from time import sleep
-from libsui import *
+#  from libsui import *
 from lib import *
 import re
 
@@ -54,8 +54,6 @@ cur = con.cursor()
 signal.signal(signal.SIGINT, sigint_handler)
 readline.set_completer_delims('\n')
 
-#  создать таблицу для собственных блюд
-cur.execute("CREATE TABLE IF NOT EXISTS dishes(title TEXT, ingredients TEXT, kcal REAL, p REAL, f REAL, c REAL)")
   # Enable tab-completion
 #readline.parse_and_bind('tab: complete')
 
@@ -63,10 +61,6 @@ cur.execute("CREATE TABLE IF NOT EXISTS dishes(title TEXT, ingredients TEXT, kca
  
 while True:
     clear()
-    # данные из таблицы с блюдами
-    dishes_list = cur.execute("SELECT title FROM dishes").fetchall()
-    food_list = cur.execute("SELECT title FROM food").fetchall()
-# вче для анализатора   
     screen('Анализатор калорийности рецепта',
             lambda: print(*dishes_list) if dishes_list else print('No entries') ,
            ['create a new dish',  'remove an existing dish', 'quit'], 3)
@@ -75,36 +69,6 @@ while True:
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
     readline.set_completer(completer([food[0] for food in food_list]).complete)
-
-#    action = input('>> ').lower().strip()
-
-#    if action == ':q':
-#        break
-    
-#    elif action == ':c':
-        # введите список продуктов с указанием количества, помогает табуляция
-        # проверка, все ли продукты известны
-        # подсчет данныэ
-        # введите название блюда
-        # сохранение в бд dishes
-#        print('Not implemented yet')
-#        sleep(1)
-    
-#    elif action == ':r':
-#        print('Not implemented yet')
-#        sleep(1)
-
-#    elif action == ':h':
-#        print("Enter the name of the food to be entered in the diary", 
-#              "':c' create a new dish",
-#              "':r' remove an existing dish",
-#              "':h' show this help",
-#              "':q' quit", sep='\n')
-#        a = input()
-    
-#    else:
-#        print('Unsupported action')
-#        sleep(1)
 
 
  # Disable tab-completion
