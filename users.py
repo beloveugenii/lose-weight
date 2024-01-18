@@ -3,14 +3,14 @@ from sqls import *
 
 HEADERS = { 'users': 'Выбор пользователя', }
 EMPTY_BODY = { 'users': 'No users found in database', }
-MENUS_ENTRIES = { 'users': ('new user creating', 'help', 'quit'), }
+MENUS_ENTRIES = { 'users': ('new user creating','delete user', 'help', 'quit'), }
 
-def set_user(sql_cursor, config_file):
+def set_user(sql_cursor):
     screen_name = 'users'
 
     while True:
-        # Get user information from DB
-        users = get_user_names(sql_cursor)
+        # Get information about users from DB if it exists
+        users = sql_cursor.execute('SELECT rowid, name FROM users').fetchall()
 
         # Prints screen with user information
         ui.screen(HEADERS[screen_name],
@@ -18,24 +18,45 @@ def set_user(sql_cursor, config_file):
                MENUS_ENTRIES[screen_name], 3
         )
 
-        uch = input('>> ').lower().strip()
+        action = input('>> ').lower().strip()
 
-        if uch.isdigit():
-          user_id = int(uch)
-          f = open(config_file, 'w')
-          f.write('uid='+str(user_id)+'\n')
-          f.close()
-          return user_id
+        if action.isdigit():
+            user_id = int(action)
 
-        elif uch == 'n': add_new_user(sql_cursor, get_new_user_data())
-        elif uch == 'q': exit(0)
-        elif uch == 'h': helps.help(screen_name)
+            # Validating inputed number
+            if user_id < 1 or user_id > len(users):
+                helps.help('not_in_list')
+                continue
+
+            return insert_user_id_in_db(sql_cursor, user_id)
+
+        elif action == 'n': sql_cursor.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", get_new_user_data())
+        elif action.startswith('d'): sql_cursor.execute("DELETE FROM users WHERE rowid = ?", (action[1:],))
+        elif action == 'q': exit(0)
+        elif action == 'h': helps.help(screen_name)
         else: helps.help('ua', 1)
 
 
-def convert_user_data(t):
-    return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
+def insert_user_id_in_db(sql_cursor, user_id):
+    stmt = 'UPDATE current_user SET user_id = ? where rowid = 1'
+    # узнаем есть ли в таблице записи
+    if sql_cursor.execute('SELECT COUNT(*) FROM current_user').fetchone()[0] == 0:
+        stmt = 'INSERT INTO current_user VALUES(?)'
+    sql_cursor.execute(stmt, (user_id,))
+    return user_id
 
+def get_user_id_from_db(sql_cursor):
+    '''try to get user id from db'''
+    user_id = sql_cursor.execute('SELECT user_id FROM current_user').fetchone()
+
+    if user_id is not None:
+        user_id = user_id[0]
+
+    return user_id
+
+def get_user_data_by_id(sql_cursor, user_id):
+    t = sql_cursor.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
+    return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
 
 
 
@@ -88,6 +109,12 @@ def get_new_user_data():
         new_user_params[k] = it
 
     return new_user_params
+
+
+
+
+
+
 
 def get_data(params, delay):
     data = dict()

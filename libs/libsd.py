@@ -7,18 +7,6 @@ def parse_line(line):
     matched = search(pat, str(line))
     return (matched[1], matched[2],)
 
-def get_user_id_from_file(file):
-    '''try to get user id from file'''
-    try:
-        f = open(file, 'r')
-        for line in f: user_id = line.split('=')[1].strip()
-        f.close()
-
-    except FileNotFoundError:
-        user_id = None
-    return user_id
-
-
 def get_calories_norm(user):
     '''calculate caloriris norm per day'''
     basic = 10 * user['weight'] + 6.25 * user['height'] - 5 * user['age']

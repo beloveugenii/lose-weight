@@ -8,9 +8,9 @@ import os
 import sqlite3
 
 PROG_NAME = 'simple-sport'
-VERSION = '0.1.6a'
+VERSION = '0.1.7'
 EXERCISES_DIR = sys.path[0] + '/basics'
-DB_NAME = sys.path[0] + '/fc.db'
+DB_NAME = sys.path[0] + '/db.sqlite'
 DELAY = 0
 
 if not os.path.exists(DB_NAME):

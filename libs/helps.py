@@ -6,10 +6,11 @@ messages = {
     'small_str': 'Too small string',
     'need_gender': 'A gender designation is required: [mM or fF]',
     'need_number': 'A number is required',
+    'not_in_list': 'User with this number not in list',
     'interactive':
         "Enter the numbers of the required workout programs separated by spaces\n'c' for creating new training\n'r' to remove existed training\n'e' for editing the training\n'h' show this help\n'q' quit",
     'users':
-        "Type user ID for choosing\n'n' create new user\n'h' show this help\n'q' quit",
+        "Type user ID for choosing\n'n' create new user\n'dNUM' for removing user with id NUM\n'h' show this help\n'q' quit",
     'diary':
         "Enter the name of the food to be entered in the diary\n'n' go to the next day\n'p' go to the previous day\n'l' show food in database\n't' go to sport assistant\n'h' show this help\n'q' quit",
     'food_db':

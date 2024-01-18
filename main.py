@@ -7,11 +7,11 @@ from libs import libsd, ui, completer as c, sql_create_tables, helps
 from sqls import *
 
 PROG_NAME = 'simple-diet'
-VERSION = '0.1.6a'
-CONFIG_FILE_PATH = sys.path[0] + '/.config'
-DB_NAME = sys.path[0] + '/fc.db'
+VERSION = '0.1.7'
+DB_NAME = sys.path[0] + '/db.sqlite'
 SS_PATH = sys.path[0] + '/ss.py'
 
+# Creating tables if needed
 if not os.path.exists(DB_NAME):
     sql_table_creater.create(DB_NAME)
 
@@ -29,27 +29,21 @@ def sigint_handler(signum, frame):
     print(f'Catched {signame}')
     exit(1)
 
-
-
-# Creating tables if needed
-#  create_tables(cur)
-
 # Enable SIG handlers and configure readline
 signal.signal(signal.SIGINT, sigint_handler)
 readline.set_completer_delims('\n,')
 
-
-# Try to get id of current user from config file
-user_id = libsd.get_user_id_from_file(CONFIG_FILE_PATH)
+# Try to get id of current user
+user_id = get_user_id_from_db(cur)
 
 if user_id is None:
-    user_id = set_user(cur, CONFIG_FILE_PATH)
+    user_id = set_user(cur)
     con.commit()
 
-user_data = convert_user_data(get_user_data_by_id(cur, user_id))
+# Get user data and diary from db
+user_data = get_user_data_by_id(cur, user_id)
 
 food_list = get_food_list(cur)
-
 
 while True:
     screen_name = 'diary'
@@ -59,7 +53,7 @@ while True:
         db_was_changed = False
 
     if user_was_changed:
-        user_data = convert_user_data(get_user_data_by_id(cur, user_id))
+        user_data = get_user_data_by_id(cur, user_id)
         user_was_changed = False
 
 
@@ -68,7 +62,7 @@ while True:
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
     ui.screen(
-        libsd.HEADERS[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
+        user_data['name'] + ': ' + libsd.HEADERS[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
         lambda:
         ui.print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(libsd.EMPTY_BODY[screen_name] + f' {current_date}'),
         libsd.MENUS_ENTRIES[screen_name], 2)
@@ -86,7 +80,8 @@ while True:
     elif action == 'h': helps.help(screen_name)
 
     elif action == 'u':
-        user_id = set_user(cur, CONFIG_FILE_PATH)
+        user_id = set_user(cur)
+        con.commit()
         user_was_changed = True
 
     elif action == 'l':
@@ -111,7 +106,7 @@ while True:
 
             elif action not in 'arqh' and len(action) > 3:
 
-                new_food_params = {'kcal': 'калорийность', 'p': 'содержание белков', 
+                new_food_params = {'kcal': 'калорийность', 'p': 'содержание белков',
                    'f': 'содержание жиров','c': 'содержание углеводов'}
                 d = get_data(new_food_params, 1)
                 d['title'] = action
@@ -165,7 +160,7 @@ while True:
             data = libsd.parse_line(el)
 
             new_entry['title'] = data[0]
-            new_entry['value'] = data[1] if data[1] is not None else input(f'количество для {new_entry["title"]}: ')
+            new_entry['value'] = data[1] if data[1] is not None else input(f"количество для '{new_entry['title'][:1].upper() + new_entry['title'][1:]}': ")
 
             if is_in_db(cur, new_entry['title']) is None:
                 print(f'Похоже, что такого блюда как \'{new_entry["title"]}\' нет в базе\nТребуется ввод дополнительной инофрмации')
