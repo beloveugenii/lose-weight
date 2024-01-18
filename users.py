@@ -45,15 +45,6 @@ def insert_user_id_in_db(sql_cursor, user_id):
     sql_cursor.execute(stmt, (user_id,))
     return user_id
 
-def get_user_id_from_db(sql_cursor):
-    '''try to get user id from db'''
-    user_id = sql_cursor.execute('SELECT user_id FROM current_user').fetchone()
-
-    if user_id is not None:
-        user_id = user_id[0]
-
-    return user_id
-
 def get_user_data_by_id(sql_cursor, user_id):
     t = sql_cursor.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
     return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )

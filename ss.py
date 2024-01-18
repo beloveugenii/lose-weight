@@ -11,17 +11,13 @@ PROG_NAME = 'simple-sport'
 VERSION = '0.1.7'
 EXERCISES_DIR = sys.path[0] + '/basics'
 DB_NAME = sys.path[0] + '/db.sqlite'
-DELAY = 0
+DELAY = 1
 
 if not os.path.exists(DB_NAME):
     sql_table_creater.create(DB_NAME)
 
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
-
-#  cur.execute('insert into trainings values("Тестовая тренировка", 2, "2с", "5с", "10с")')
-#  cur.execute('insert into exercises values ("Тест1", "Любая"), ("Тест2", "Любая")')
-#  cur.execute("insert into exercises_lists values(1, '10', 1), (1, '5', 1), (2, '4', 1)")
 
 parser = argparse.ArgumentParser(description='Minimalistic console sport assistant',)
 

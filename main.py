@@ -33,12 +33,33 @@ def sigint_handler(signum, frame):
 signal.signal(signal.SIGINT, sigint_handler)
 readline.set_completer_delims('\n,')
 
-# Try to get id of current user
-user_id = get_user_id_from_db(cur)
+user_id = None
+
+while user_id is None:
+
+    if cur.execute('SELECT COUNT(*) FROM current_user').fetchone()[0] == 0:
+        pass
+    else:
+        user_id = cur.execute('SELECT user_id FROM current_user').fetchone()[0]
+# Try to get id of current user from db
+
+
+#if user_id is not None:
+#    user_id = user_id[0]
+
 
 if user_id is None:
+#    con.close()
+# ЗДЕСЬ НАДО ВЫЗЫВАТЬ ВНЕШНЮЮ ПРОГРАММУ
+# ЧТОБЫ ОНА ДОБАВЛЯЛА ПОЛЬЩЛВАТЕЛЯ В БД
+# А ЗАТЕМ ЕЩЕ РАЗ ПРОБОВАТЬ СЧИТЫААТЬ ИД ИЗ БАЗЫ
     user_id = set_user(cur)
     con.commit()
+
+
+
+
+
 
 # Get user data and diary from db
 user_data = get_user_data_by_id(cur, user_id)
