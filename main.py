@@ -3,20 +3,18 @@
 import sqlite3, datetime, readline, signal, sys
 import os
 from users import *
-from libs import libsd, ui, completer as c, sql_create_tables, helps
-from sqls import *
+from libs import libsd, ui, completer as c, common
 
 PROG_NAME = 'simple-diet'
 VERSION = '0.1.7'
 DB_NAME = sys.path[0] + '/db.sqlite'
 SS_PATH = sys.path[0] + '/ss.py'
 
-# Creating tables if needed
-if not os.path.exists(DB_NAME):
-    sql_table_creater.create(DB_NAME)
-
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
+# Creating tables if needed
+
+common.create_tables(cur, DB_NAME)
 
 current_date = datetime.date.today()
 db_was_changed = False
@@ -35,42 +33,23 @@ readline.set_completer_delims('\n,')
 
 user_id = None
 
-while user_id is None:
-
-    if cur.execute('SELECT COUNT(*) FROM current_user').fetchone()[0] == 0:
-        pass
-    else:
-        user_id = cur.execute('SELECT user_id FROM current_user').fetchone()[0]
-# Try to get id of current user from db
-
-
-#if user_id is not None:
-#    user_id = user_id[0]
-
-
-if user_id is None:
-#    con.close()
-# ЗДЕСЬ НАДО ВЫЗЫВАТЬ ВНЕШНЮЮ ПРОГРАММУ
-# ЧТОБЫ ОНА ДОБАВЛЯЛА ПОЛЬЩЛВАТЕЛЯ В БД
-# А ЗАТЕМ ЕЩЕ РАЗ ПРОБОВАТЬ СЧИТЫААТЬ ИД ИЗ БАЗЫ
+if not current_user_selected(cur):
     user_id = set_user(cur)
     con.commit()
-
-
-
-
+else:
+    user_id = cur.execute('SELECT user_id FROM current_user').fetchone()[0]
 
 
 # Get user data and diary from db
 user_data = get_user_data_by_id(cur, user_id)
 
-food_list = get_food_list(cur)
+food_list = libsd.get_food_list(cur)
 
 while True:
     screen_name = 'diary'
     ui.clear()
     if db_was_changed:
-        food_list = get_food_list(cur)
+        food_list = libsd.get_food_list(cur)
         db_was_changed = False
 
     if user_was_changed:
@@ -78,7 +57,7 @@ while True:
         user_was_changed = False
 
 
-    diary = get_data_for_diary(cur, current_date.strftime('%Y-%m-%d'), user_id)
+    diary = libsd.get_data_for_diary(cur, current_date.strftime('%Y-%m-%d'), user_id)
     kcal_norm = libsd.get_calories_norm(user_data)
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
@@ -98,7 +77,7 @@ while True:
     elif action == 'p': current_date -= datetime.timedelta(days = 1)
     elif action == 'n': current_date += datetime.timedelta(days = 1)
     elif action == 's': os.system('python3 ' + SS_PATH + ' -i')
-    elif action == 'h': helps.help(screen_name)
+    elif action == 'h': ui.show_help(screen_name)
 
     elif action == 'u':
         user_id = set_user(cur)
@@ -109,7 +88,7 @@ while True:
         screen_name = 'food_db'
         while True:
             ui.clear()
-            res = get_food_data(cur)
+            res = libsd.get_food_data(cur)
 
             # Disable tab-completion
             readline.parse_and_bind('tab: \t')
@@ -122,8 +101,8 @@ while True:
             action = input('>> ').lower().strip()
 
             if action == 'q': break
-            elif action == 'h': helps.help(screen_name)
-            elif action in 'ar': helps.help('not_impl', 1)
+            elif action == 'h': ui.show_help(screen_name)
+            elif action in 'ar': ui.show_help('not_impl', 1)
 
             elif action not in 'arqh' and len(action) > 3:
 
@@ -131,7 +110,7 @@ while True:
                    'f': 'содержание жиров','c': 'содержание углеводов'}
                 d = get_data(new_food_params, 1)
                 d['title'] = action
-                add_new_food(cur, d)
+                libsd.add_new_food(cur, d)
                 con.commit()
                 db_was_changed = True
 
@@ -171,7 +150,7 @@ while True:
 
 
            
-            else: helps.help('ua', 1)
+            else: ui.show_help('ua', 1)
 
     elif action not in 'lpnqht' and len(action) > 2:
         new_entry = { 'date': current_date, 'user': user_id, }
@@ -183,7 +162,7 @@ while True:
             new_entry['title'] = data[0]
             new_entry['value'] = data[1] if data[1] is not None else input(f"количество для '{new_entry['title'][:1].upper() + new_entry['title'][1:]}': ")
 
-            if is_in_db(cur, new_entry['title']) is None:
+            if libsd.is_in_db(cur, new_entry['title']) is None:
                 print(f'Похоже, что такого блюда как \'{new_entry["title"]}\' нет в базе\nТребуется ввод дополнительной инофрмации')
 
                 # Добавляем новый продукт в БД
@@ -193,13 +172,13 @@ while True:
                           'c': 'содержание углеводов'}, 1)
 
                 d['title'] = new_entry['title']
-                add_new_food(cur, d)
+                libsd.add_new_food(cur, d)
                 con.commit()
                 db_was_changed = True
 
             # Добавляем запись в дневник
-            add_in_diary(cur, new_entry)
+            libsd.add_in_diary(cur, new_entry)
             con.commit()
 
-    else: helps.help('ua', 1)
+    else: ui.show_help('ua', 1)
 

@@ -34,4 +34,34 @@ MENUS_ENTRIES = {
     'analyzer': ('create a new dish',  'remove an existing dish', 'quit'),
 }
 
+def get_data_for_diary(cur, formated_date, user_id):
+    return cur.execute(
+        '''
+        SELECT d.title, value, ROUND(f.kcal * (d.value / 100), 1) AS calories
+        FROM diary AS d
+        INNER JOIN food AS f
+        WHERE d.title = f.title AND date = ? AND user = ?
+        ''', (formated_date, user_id)).fetchall()
 
+
+
+
+
+def get_food_data(cur):
+    return sorted(cur.execute('SELECT title, CAST(kcal AS INT), CAST(p AS INT), CAST(f AS INT), CAST(c AS INT) FROM food').fetchall())
+
+def get_food_list(cur):
+    return cur.execute('SELECT title FROM food').fetchall()# + cur.execute('SELECT title FROM dishes').fetchall()
+
+def get_dishes_list(cur):
+    return cur.execute('SELECT title, kcal FROM dishes').fetchall()
+
+def is_in_db(cur, title):
+    return cur.execute("SELECT title, kcal FROM food WHERE title = ?", (title,)).fetchone()
+
+
+def add_in_diary(cur, data):
+    cur.execute("INSERT INTO diary VALUES(:user, :date, :title, :value)", data)
+
+def add_new_food(cur, data):
+    cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', data)

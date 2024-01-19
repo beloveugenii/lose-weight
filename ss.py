@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #  from lib import *
-from libs import libss, ui, sql_create_tables, helps
+from libs import libss, ui, common
 import argparse, signal, sys
 from random import choice
 from time import sleep
@@ -13,11 +13,10 @@ EXERCISES_DIR = sys.path[0] + '/basics'
 DB_NAME = sys.path[0] + '/db.sqlite'
 DELAY = 1
 
-if not os.path.exists(DB_NAME):
-    sql_table_creater.create(DB_NAME)
-
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
+common.create_tables(cur, DB_NAME)
+
 
 parser = argparse.ArgumentParser(description='Minimalistic console sport assistant',)
 
@@ -82,8 +81,8 @@ def interactive():
         a = input('>> ')
 
         if a == 'q': exit(0)
-        elif a in ('cer'): helps.help('not_impl', 1)
-        elif a == 'h': helps.help(screen_name)
+        elif a in ('cer'): ui.show_help('not_impl', 1)
+        elif a == 'h': ui.show_help(screen_name)
         else:
             for i in [int(l) for l in a.split() if l.isnumeric()]:
                 if i > 0 and i <= len(files):
