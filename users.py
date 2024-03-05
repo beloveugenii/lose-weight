@@ -1,4 +1,4 @@
-from libs import ui, common
+import ui, common
 
 HEADERS = { 'users': 'Выбор пользователя', }
 EMPTY_BODY = { 'users': 'No users found in database', }

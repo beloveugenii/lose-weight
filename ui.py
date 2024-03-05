@@ -3,14 +3,19 @@
 from os import get_terminal_size
 from time import sleep
 
-version = '0.0.2'
+version = '0.0.2.1'
 
-def line():
-    print('-' * get_terminal_size()[0])
+def line(): print('-' * get_terminal_size()[0])
 
-def clear():
-    # clears the screen
-    print('\033[H\033[2J', end='')
+def clear(): print('\033[H\033[2J', end='')
+
+def hide_cursor(): print("\033[?25l")
+
+def restore_cursor(): print("\033[?25h")
+
+def save_cursor_pos(): print("\033[s")
+
+def restore_cursor_pos(): print("\033[u")
 
 def promt(what):
     # takes a string
@@ -61,17 +66,7 @@ def print_as_table(items, sep):
         else:
             print('%s' % (sep * sep_len,))
 
-def hide_cursor():
-    print("\033[?25l")
 
-def restore_cursor():
-    print("\033[?25h")
-
-def save_cursor_pos():
-    print("\033[s")
-
-def restore_cursor_pos():
-    print("\033[u")
 
 def header(text):
     # takes a string and transform it to list of tuples with single element
@@ -140,3 +135,29 @@ def show_help(*args):
         sleep(args[1])
     else:
         empty_input = input()
+
+class Completer():
+    def __init__(self, options):
+        self.options = sorted(options)
+        return
+
+    def complete(self, text, state):
+        response = None
+        if state == 0:
+            # Если какой-то текст передан в метод
+            if text:
+                # вернуть список слов из списка, которые начинаются на текст
+                self.matches = [s for s in self.options if s and s.startswith(text.lstrip())]
+            else:
+                # иначе вернуть весь список
+                self.matches = self.options[:]
+
+        # Вернуть элемент состояния из списка совпадений, если их много. 
+
+        try:
+            response = self.matches[state]
+        except IndexError:
+            response = None
+        return response
+
+
