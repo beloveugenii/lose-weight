@@ -4,8 +4,9 @@ import sqlite3, datetime, readline, signal, sys, os
 from users import *
 import ui
 from common import *
+from init_db import *
 
-PROG_NAME = 'calj'
+PROG_NAME = 'lose-weight'
 VERSION = '0.1.7.1'
 DB_NAME = sys.path[0] + '/db.sqlite'
 
@@ -14,7 +15,7 @@ cur = con.cursor()
 
 # Creating tables if needed
 
-create_tables(cur, DB_NAME)
+create_tables(cur)
 
 current_date = datetime.date.today()
 db_was_changed = False
