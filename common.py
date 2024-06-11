@@ -1,5 +1,52 @@
+VERSION = '0.0.0.2'
+
 import ui, re
 from random import randint
+
+# Функция получает значение и пробует конвертировать его в число с точкой
+def str_to_float(s=0):
+    try: s = float(s)
+    except: s = 0.0
+    return s
+
+# Функция проверяет, является ли переданное числом с точкой
+# и возвращает логическое значение
+def isfloat(what):
+    if what.startswith('-'):
+        what = what[1:]
+    parts = what.split('.')
+    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
+
+# Функция для проверки, является ли значение требуемым типом
+def is_valid(value, type_str, char_list = None):
+
+    v_types = ( 'is_number', 'is_num', 'is_float', 'is_fl',
+        'is_negative', 'is_neg', 'in_lst', 'in_ls', 'len_g', )
+
+    if type_str not in v_types:
+        raise ValueError(f'"{type_str}" is not implemented yet')
+
+    value = str(value).strip()
+
+    return (
+        type_str.startswith('is_num') and value.isnumeric() or
+        type_str.startswith('is_neg') and value.startswith('-') or
+        type_str.startswith('is_fl') and isfloat(value) or
+        type_str.startswith('in_ls') and value in char_list# or
+        #  type_str.startswith('len_g') and len(value) >
+    )
+
+# Функция получает ссылку на словарь и ключ какого-то элемента
+# Пытается прибавить единицу в этот ключ если он существует или создает его, если такого ключа не было
+def incr_or_av(some_dict, key):
+    try:
+        some_dict[key] += 1
+    except KeyError:
+        some_dict[key] = 0
+
+
+
+
 BNUMS = { 0: ( "#########", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########", "#########", ),
         1: ( "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  " ),
         2: ( "#########", "#########", "      ###", "#########", "#########", "###      ", "#########", "#########", ),
@@ -27,33 +74,9 @@ SQLS = {
         'WITH tmp AS (SELECT exer_id, duration FROM exercises_lists WHERE training_id = ?) SELECT e.title, tmp.duration FROM tmp INNER JOIN exercises AS e WHERE tmp.exer_id = e.rowid',
 
 }
-def isfloat(what):
-    if what.startswith('-'):
-        what = what[1:]
-    parts = what.split('.')
-    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
-HEADERS = {
-    'diary': 'Дневник питания',
-    'food_db': 'Внесение данных о новом продукте',
-    'analyzer': 'Анализатор калорийности рецепта',
-    'interactive': 'Выберите тренировку',
-    'timer': 'Таймер',
-    'statistic': 'Статистика тренировки',
-}
 
-EMPTY_BODY = {
-    'diary': 'No entries',
-    'food_db': 'No data in database yet',
-    'analyzer': 'No entries',
-}
 
-MENUS_ENTRIES = {
-    'interactive': ('create', 'remove', 'edit', 'help', 'quit'),
-    'diary': ('list of food', 'users', 'previous entry', 'next entry', 'help', 'quit'),
-    'food_db': ('analyst', 'remove', 'help', 'quit'),
-    'analyzer': ('create a new dish',  'remove an existing dish', 'quit'),
-}
-
+    
 STRINGS = {
     'params':
     {'name': 'имя','pause': 'Пауза', 'prepare': 'Приготовьтесь', 'relax': 'Время отдохнуть', 'on_end': 'Конец тренировки'},
@@ -61,11 +84,6 @@ STRINGS = {
         ('Средне', 'Быстро'),
 }
 
-def isfloat(what):
-    if what.startswith('-'):
-        what = what[1:]
-    parts = what.split('.')
-    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
 
 
 def get_calories_norm(user):
@@ -82,14 +100,6 @@ def empty_start(PROG_NAME):
     print("No file set.\nUsage: " + PROG_NAME + ".py [OPTIONS] [FILE]")
     exit(-1)
 
-
-def incr_or_av(some_dict, key):
-    '''try increment value of key in some_dict'''
-    '''create pair with given key if no key in dict'''
-    try:
-        some_dict[key] += 1
-    except KeyError:
-        some_dict[key] = 0
 
 def show_statistic(stat_dict):
     if len(stat_dict) < 1:
@@ -110,6 +120,25 @@ def show_statistic(stat_dict):
     a = input()
     ui.clear()
 
+# Функция получает время в секундах и преобразует его в часы и минуты
+def sec_to_hms(sec):
+    '''takes time in seconds'''
+    '''returns formated string with time in hours, minutes and seconds'''
+    h, m = 0, 0
+    res = ''
+    h = sec // 3600
+    sec -= 3600 * h
+    m = sec // 60
+    sec -= 60 * m
+
+    if h > 0:
+        res += '{}ч '.format(h)
+    if m > 0:
+        res += '{}м '.format(m)
+    res += '{}с'.format(sec)
+    return res
+
+# Функция получает время в часах и минутах и преобразует его в секунды
 def hms_to_sec(time):
     '''takes time and return it in seconds'''
     try:
@@ -128,59 +157,6 @@ def hms_to_sec(time):
 
     except AttributeError:
         return None
-
-def sec_to_hms(sec):
-    '''takes time in seconds'''
-    '''returns formated string with time in hours, minutes and seconds'''
-    h, m = 0, 0
-    res = ''
-    h = sec // 3600
-    sec -= 3600 * h
-    m = sec // 60
-    sec -= 60 * m
-
-    if h > 0:
-        res += '{}ч '.format(h)
-    if m > 0:
-        res += '{}м '.format(m)
-    res += '{}с'.format(sec)
-    return res
-
-def hms_to_sec(time):
-    '''takes time and return it in seconds'''
-    try:
-        match = re.search(r'^([\d\.]+)(.*)$', time).groups()
-        mult = 1
-
-        # without if expreasion it returns multiplied on 60
-        if match[1] == '':
-            mult = 1
-        elif match[1] in 'мm':
-            mult = 60
-        elif match[1] in 'hч':
-            mult = 3600
-
-        return int(float(match[0]) * mult)
-
-    except AttributeError:
-        return None
-
-def sec_to_hms(sec):
-    '''takes time in seconds'''
-    '''returns formated string with time in hours, minutes and seconds'''
-    h, m = 0, 0
-    res = ''
-    h = sec // 3600
-    sec -= 3600 * h
-    m = sec // 60
-    sec -= 60 * m
-
-    if h > 0:
-        res += '{}ч '.format(h)
-    if m > 0:
-        res += '{}м '.format(m)
-    res += '{}с'.format(sec)
-    return res
 
 def parse_file(file_name):
     '''takes a training file name and parses it'''
@@ -259,23 +235,7 @@ def print_big_nums(num):
 
 
 
-def is_valid(value, type_str, char_list = None):
 
-    v_types = ( 'is_number', 'is_num', 'is_float', 'is_fl',
-        'is_negative', 'is_neg', 'in_lst', 'in_ls', 'len_g', )
-
-    if type_str not in v_types:
-        raise ValueError(f'"{type_str}" is not implemented yet')
-
-    value = str(value).strip()
-
-    return (
-        type_str.startswith('is_num') and value.isnumeric() or
-        type_str.startswith('is_neg') and value.startswith('-') or
-        type_str.startswith('is_fl') and isfloat(value) or
-        type_str.startswith('in_ls') and value in char_list# or
-        #  type_str.startswith('len_g') and len(value) >
-    )
 
 
 def get_data_for_diary(cur, formated_date, user_id):

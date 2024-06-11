@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import sqlite3, datetime, readline, signal, sys, os
+import sqlite3, datetime, readline, sys, os
+from signal import signal, SIGINT
 from users import *
-import ui
+from ui import *
 from common import *
-from init_db import *
 
 PROG_NAME = 'lose-weight'
 VERSION = '0.1.7.1'
@@ -12,97 +12,82 @@ DB_NAME = sys.path[0] + '/db.sqlite'
 
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
-
-# Creating tables if needed
-
 create_tables(cur)
 
-current_date = datetime.date.today()
-db_was_changed = False
-user_was_changed = False
-
-# Обработчик нажатия Ctrl-C
-def sigint_handler(signum, frame):
-    signame = signal.Signals(signum).name
-    ui.clear()
-    print(f'Catched {signame}')
-    exit(1)
 
 # Enable SIG handlers and configure readline
-signal.signal(signal.SIGINT, sigint_handler)
+signal(SIGINT, sigint_handler)
 readline.set_completer_delims('\n,')
+#  readline.parse_and_bind('tab: complete')
 
-user_id = None
+wc = False
+current_date = datetime.date.today()
 
-if not current_user_selected(cur):
-    user_id = set_user(cur)
-    con.commit()
-else:
-    user_id = cur.execute('SELECT user_id FROM current_user').fetchone()[0]
-
-
-# Get user data and diary from db
-user_data = get_user_data_by_id(cur, user_id)
-
-food_list = get_food_list(cur)
 
 while True:
-    screen_name = 'diary'
-    ui.clear()
-    if db_was_changed:
-        food_list = get_food_list(cur)
-        db_was_changed = False
+    user_id, wc = get_user_id(cur)
+    if wc:
+        con.commit()
+        wc = not wc
 
-    if user_was_changed:
-        user_data = get_user_data_by_id(cur, user_id)
-        user_was_changed = False
+    # Get user data and diary from db
+    user_data = get_user_data_by_id(cur, user_id)
+    food_list = get_food_list(cur)
+
+    screen_name = 'diary'
+    clear()
+    if wc:
+        food_list = get_food_list(cur)
+        wc = not wc
+
 
 
     diary = get_data_for_diary(cur, current_date.strftime('%Y-%m-%d'), user_id)
     kcal_norm = float(get_calories_norm(user_data))
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
-    ui.screen(
-        user_data['name'] + ': ' + HEADERS[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
+    screen(
+        user_data['name'] + ': ' + headers[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
         lambda:
-        ui.print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(EMPTY_BODY[screen_name] + f' {current_date}'),
-        MENUS_ENTRIES[screen_name], 2)
+        print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else helps(messages['ndip'], 0),
+        menu_str[screen_name], 2)
 
     # Enable tab-completion
     readline.parse_and_bind('tab: complete')
-    readline.set_completer(ui.Completer([food[0] for food in food_list]).complete)
+    readline.set_completer(Completer([food[0] for food in food_list]).complete)
 
     action = input('>> ').lower().strip()
 
     if action == 'q': break
     elif action == 'p': current_date -= datetime.timedelta(days = 1)
     elif action == 'n': current_date += datetime.timedelta(days = 1)
-    elif action == 'h': ui.show_help(screen_name)
+    elif action == 'h': helps(help_str[screen_name])
 
     elif action == 'u':
-        user_id = set_user(cur)
-        con.commit()
-        user_was_changed = True
+        user_id, wc = set_user(cur)
+        if wc:
+            con.commit()
+            wc = not wc
 
     elif action == 'l':
         screen_name = 'food_db'
         while True:
-            ui.clear()
+            clear()
             res = get_food_data(cur)
 
             # Disable tab-completion
             readline.parse_and_bind('tab: \t')
 
-            ui.screen(
-                HEADERS[screen_name],
-                lambda: ui.print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print(EMPTY_BODY[screen_name]),
-                MENUS_ENTRIES[screen_name], 2)
+            screen(
+                headers[screen_name],
+                lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else helps(messages['nd'], 0),
+                menu_str[screen_name], 2)
 
             action = input('>> ').lower().strip()
 
             if action == 'q': break
-            elif action == 'h': ui.show_help(screen_name)
-            elif action in 'ar': ui.show_help('not_impl', 1)
+            elif action == 'h': helps(help_str[screen_name])
+            elif action in 'ar': helps(messages['not_impl'], 1)
 
             elif action not in 'arqh' and len(action) > 3:
 
@@ -112,17 +97,17 @@ while True:
                 d['title'] = action
                 add_new_food(cur, d)
                 con.commit()
-                db_was_changed = True
+                wc = True
 
             #  elif action == 'a':
                 #  screen_name = 'analyzer'
                 #  while True:
                     #  dishes_list = get_dishes_list(cur)
                     #  # АНАЛИЗАТОР РЕЦЕПТА
-                    #  ui.screen(
-                        #  HEADERS[screen_name],
-                        #  lambda: print(*dishes_list) if dishes_list else print(EMPTY_BODY[screen_name]),
-                        #  MENUS_ENTRIES[screen_name], 3)
+                    #  screen(
+                        #  headers[screen_name],
+                        #  lambda: print(*dishes_list) if dishes_list else helps(messages['nd'], 0),
+                        #  menu_str[screen_name], 3)
 
                     #  action = input('>> ').lower().strip()
 
@@ -133,24 +118,11 @@ while True:
         #  #  подсчет данныэ
         #  #  введите название блюда
         #  #  сохранение в бд dishes
-                        #  print('Not implemented yet')
-                        #  sleep(1)
     
-                    #  elif action == 'r':
-                        #  print('Not implemented yet')
-                        #  sleep(1)
-
-                    #  elif action == 'h':
-                        #  print(MENU_HELPS[screen_name])
-                        #  a = input()
-    
-                    #  else:
-                        #  print('Unsupported action')
-                        #  sleep(1)
 
 
            
-            else: ui.show_help('ua', 1)
+            else: helps(messages['ua'], 1)
 
     elif action not in 'lpnqht' and len(action) > 2:
         new_entry = { 'date': current_date, 'user': user_id, }
@@ -174,12 +146,12 @@ while True:
                 d['title'] = new_entry['title']
                 add_new_food(cur, d)
                 con.commit()
-                db_was_changed = True
+                wc = True
 
             # Добавляем запись в дневник
             add_in_diary(cur, new_entry)
             con.commit()
 
-    else: ui.show_help('ua', 1)
+    else: helps(messages['ua'], 1)
 
 

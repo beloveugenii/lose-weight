@@ -1,23 +1,35 @@
-import ui, common
+import common
+from ui import *
+from liblw import *
 
-HEADERS = { 'users': 'Выбор пользователя', }
-EMPTY_BODY = { 'users': 'No users found in database', }
-MENUS_ENTRIES = { 'users': ('new user creating','delete user', 'help', 'quit'), }
+screen_name = 'users'
 
-def current_user_selected(cur):
-    return True if cur.execute('SELECT COUNT(*) FROM current_user').fetchone()[0] else False
+## USERS
+# Функция проверяет выбран ли какой-то пользователь на данный момент
+# Если да - возвращает его id
+# Если нет - перходит на экран выбора пользователя
+def get_user_id(cur):
+    was_changed = False
+    user_id = check_data_in_table(cur, 'current_user')
+    if user_id:
+        user_id = user_id[0]
+
+    while user_id is None:
+        user_id, was_changed = set_user(cur)
+
+    return user_id, was_changed
 
 def set_user(cur):
-    screen_name = 'users'
+    wc = False
 
     while True:
         # Get information about users from DB if it exists
         users = cur.execute('SELECT rowid, name FROM users').fetchall()
 
         # Prints screen with user information
-        ui.screen(HEADERS[screen_name],
-               lambda: ui.print_as_table(users, ' ') if users else print(EMPTY_BODY[screen_name]),
-               MENUS_ENTRIES[screen_name], 3
+        screen(headers[screen_name],
+               lambda: print_as_table(users, ' ') if users else helps(messages['nu'], 0),
+               menu_str[screen_name], 3
         )
 
         action = input('>> ').lower().strip()
@@ -27,16 +39,27 @@ def set_user(cur):
 
             # Validating inputed number
             if user_id < 1 or user_id > len(users):
-                ui.show_help('not_in_list')
+                helps('not_in_list')
                 continue
+        
+            insert_user_id_in_db(cur, user_id)
+            wc = True
+            
+            return user_id, wc
 
-            return insert_user_id_in_db(cur, user_id)
-
-        elif action == 'n': cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", get_new_user_data())
-        elif action.startswith('d'): cur.execute("DELETE FROM users WHERE rowid = ?", (action[1:],))
-        elif action == 'q': exit(0)
-        elif action == 'h': ui.show_help(screen_name)
-        else: ui.show_help('ua', 1)
+        elif action == 'a': 
+            cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", get_new_user_data())
+            wc = True
+        elif action.startswith('r'): 
+            cur.execute("DELETE FROM users WHERE rowid = ?", (action[1:],))
+            wc = True
+        elif action == 'q': 
+            break
+            #  return insert_user_id_in_db(cur, 1), was_changed
+        elif action == 'h':
+            helps(help_str[screen_name])
+        else: 
+            helps(messages['ua'], 1)
 
 
 def insert_user_id_in_db(cur, user_id):
@@ -45,7 +68,6 @@ def insert_user_id_in_db(cur, user_id):
     if cur.execute('SELECT COUNT(*) FROM current_user').fetchone()[0] == 0:
         stmt = 'INSERT INTO current_user VALUES(?)'
     cur.execute(stmt, (user_id,))
-    return user_id
 
 def get_user_data_by_id(cur, user_id):
     t = cur.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
@@ -66,12 +88,12 @@ def get_new_user_data():
         it = ''
 
         while True:
-            ui.clear()
+            clear()
             for a, b in new_user_params.items():
                 print(a, b)
 
             if k == 'activity':
-                ui.show_help('activity', 0)
+                helps('activity', 0)
 
             it = input(f'\n{promt}: ').strip()
 
@@ -79,25 +101,25 @@ def get_new_user_data():
                 if len(it) > 2:
                     break
                 else:
-                    ui.show_help('small_str', 1)
+                    helps(messages['small_str'], 1)
 
             elif k == 'sex':
                 if common.is_valid(it, 'in_lst', 'mMfFмМжЖ') and len(it) > 0:
                     break
                 else:
-                    ui.show_help('need_gender', 1)
+                    helps(messages['need_gender'], 1)
 
             elif k in ('age', 'height', 'weight'):
                 if common.is_valid(it, 'is_num') and len(it) > 1:
                     break
                 else:
-                    ui.show_help('need_number', 1)
+                    helps(messages['need_number'], 1)
 
             elif k == 'activity':
                 if common.is_valid(it, 'is_fl') and not it.startswith('-') and len(it) > 1:
                     break
                 else:
-                    ui.show_help('need_number', 1)
+                    helps(messages['need_number'], 1)
 
         new_user_params[k] = it
 
@@ -116,16 +138,16 @@ def get_data(params, delay):
             while True:
                 it = input(params[key][0].upper() + params[key][1:] + ': ').strip()
                 if len(it) < 2 and not key == 'sex':
-                    ui.show_help('small_str', delay)
+                    helps('small_str', delay)
                 else:
                     if key == 'sex' and it not in 'мМжЖmMfF':
-                        ui.show_help('need_gender', delay)
+                        helps('need_gender', delay)
                     else:
                         data[key] = it
                         break
         elif key in ('kcal', 'age', 'height', 'weight', 'value', 'activity', 'p', 'c', 'f'):
             while True:
-                if key == 'activity': ui.show_help('activity', 0)
+                if key == 'activity': helps(help_str['activity'], 0)
 
                 try:
                     it = input(params[key] + ': ')
@@ -136,7 +158,7 @@ def get_data(params, delay):
                     data[key] = float(it)
                     break
                 except ValueError:
-                    ui.show_help('need_number', delay)
+                    helps('need_number', delay)
 
     return data
 
