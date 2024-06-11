@@ -4,58 +4,39 @@ from liblw import *
 
 screen_name = 'users'
 
-## USERS
-# Функция проверяет выбран ли какой-то пользователь на данный момент
-# Если да - возвращает его id
-# Если нет - перходит на экран выбора пользователя
-def get_user_id(cur):
-    was_changed = False
-    user_id = check_data_in_table(cur, 'current_user')
-    if user_id:
-        user_id = user_id[0]
-
-    while user_id is None:
-        user_id, was_changed = set_user(cur)
-
-    return user_id, was_changed
 
 def set_user(cur):
-    wc = False
-
-    while True:
-        # Get information about users from DB if it exists
+    screen_name = 'users'
+    #  wc = False
+    user_id = 0
+    while user_id == 0:
         users = cur.execute('SELECT rowid, name FROM users').fetchall()
-
-        # Prints screen with user information
         screen(headers[screen_name],
                lambda: print_as_table(users, ' ') if users else helps(messages['nu'], 0),
                menu_str[screen_name], 3
         )
-
         action = input('>> ').lower().strip()
+
 
         if action.isdigit():
             user_id = int(action)
 
             # Validating inputed number
             if user_id < 1 or user_id > len(users):
-                helps('not_in_list')
+                helps(messages['not_in_list'], 0)
                 continue
-        
-            insert_user_id_in_db(cur, user_id)
-            wc = True
-            
-            return user_id, wc
+            else:
+                insert_user_id_in_db(cur, user_id)
+                return user_id, True
 
         elif action == 'a': 
             cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", get_new_user_data())
-            wc = True
+            return 0, True
         elif action.startswith('r'): 
             cur.execute("DELETE FROM users WHERE rowid = ?", (action[1:],))
-            wc = True
+            return 0, True
         elif action == 'q': 
-            break
-            #  return insert_user_id_in_db(cur, 1), was_changed
+            return 0, False
         elif action == 'h':
             helps(help_str[screen_name])
         else: 
@@ -64,8 +45,7 @@ def set_user(cur):
 
 def insert_user_id_in_db(cur, user_id):
     stmt = 'UPDATE current_user SET user_id = ? where rowid = 1'
-    # узнаем есть ли в таблице записи
-    if cur.execute('SELECT COUNT(*) FROM current_user').fetchone()[0] == 0:
+    if check_data_in_table(cur, 'current_user') == 0:
         stmt = 'INSERT INTO current_user VALUES(?)'
     cur.execute(stmt, (user_id,))
 

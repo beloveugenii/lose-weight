@@ -18,9 +18,13 @@ def sigint_handler(signum, frame):
     print(f'Catched {signame}')
     exit(1)
 
+
+
 # Функция проверяет, есть ли в таблице хоть одна запись
 def check_data_in_table(cur, table_name):
-    return cur.execute('SELECT * FROM ' + table_name).fetchone()
+    res = cur.execute('SELECT * FROM ' + table_name).fetchone()
+    if res: return res[0]
+    else: return 0
 
 # Функция для начального создания таблиц в БД
 def create_tables(cur):
@@ -32,5 +36,7 @@ def create_tables(cur):
     #  for table in ['default_params']:
         #  if check_data_in_table(cur, table) is None:
             #  cur.execute('INSERT INTO default_params VALUES(49504, 0.15, 0.04, 0.13)')
+
+
 
 

@@ -5,10 +5,11 @@ from signal import signal, SIGINT
 from users import *
 from ui import *
 from common import *
+from liblw import *
 
 PROG_NAME = 'lose-weight'
 VERSION = '0.1.7.1'
-DB_NAME = sys.path[0] + '/db.sqlite'
+DB_NAME = sys.path[0] + '/data.db'
 
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
@@ -21,15 +22,19 @@ readline.set_completer_delims('\n,')
 #  readline.parse_and_bind('tab: complete')
 
 wc = False
+user_id = check_data_in_table(cur, 'current_user')
 current_date = datetime.date.today()
 
 
 while True:
-    user_id, wc = get_user_id(cur)
-    if wc:
-        con.commit()
-        wc = not wc
-
+    while user_id == 0:
+        user_id, wc = set_user(cur)
+        if wc:
+            con.commit()
+            wc = not wc
+        
+        user_id = check_data_in_table(cur, 'current_user')
+        
     # Get user data and diary from db
     user_data = get_user_data_by_id(cur, user_id)
     food_list = get_food_list(cur)
@@ -68,6 +73,7 @@ while True:
         if wc:
             con.commit()
             wc = not wc
+            #  \cuser_id = check_data_in_table(cur, 'current_user')
 
     elif action == 'l':
         screen_name = 'food_db'
