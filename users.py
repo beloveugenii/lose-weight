@@ -4,13 +4,15 @@ from liblw import *
 
 screen_name = 'users'
 
-
-def set_user(cur):
+# Основной функционал работы с пользователями
+# Получает указатель на БД
+def users(cur):
     screen_name = 'users'
     #  wc = False
     user_id = 0
     while user_id == 0:
-        users = cur.execute('SELECT rowid, name FROM users').fetchall()
+        users = get_user_info(cur)
+
         screen(headers[screen_name],
                lambda: print_as_table(users, ' ') if users else helps(messages['nu'], 0),
                menu_str[screen_name], 3
@@ -26,32 +28,28 @@ def set_user(cur):
                 helps(messages['not_in_list'], 0)
                 continue
             else:
-                insert_user_id_in_db(cur, user_id)
-                return user_id, True
+                return set_user(cur, user_id)
+                #  return user_id, True
 
-        elif action == 'a': 
-            cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", get_new_user_data())
-            return 0, True
-        elif action.startswith('r'): 
-            cur.execute("DELETE FROM users WHERE rowid = ?", (action[1:],))
-            return 0, True
-        elif action == 'q': 
-            return 0, False
-        elif action == 'h':
-            helps(help_str[screen_name])
-        else: 
-            helps(messages['ua'], 1)
+        elif action == 'a': return add_user(cur, get_new_user_data())
+        elif action.startswith('r'): return remove_user(cur, action[1])
+        elif action == 'q': exit(0)
+        elif action == 'h': helps(help_str[screen_name])
+        elif action == 'b': return False
+        else: helps(messages['ua'], 1)
 
 
-def insert_user_id_in_db(cur, user_id):
+
+
+
+
+def set_user(cur, user_id):
     stmt = 'UPDATE current_user SET user_id = ? where rowid = 1'
     if check_data_in_table(cur, 'current_user') == 0:
         stmt = 'INSERT INTO current_user VALUES(?)'
     cur.execute(stmt, (user_id,))
+    return True
 
-def get_user_data_by_id(cur, user_id):
-    t = cur.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
-    return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
 
 
 

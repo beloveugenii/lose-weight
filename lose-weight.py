@@ -8,7 +8,7 @@ from common import *
 from liblw import *
 
 PROG_NAME = 'lose-weight'
-VERSION = '0.1.7.1'
+VERSION = '0.1.7.2'
 DB_NAME = sys.path[0] + '/data.db'
 
 con = sqlite3.connect(DB_NAME)
@@ -22,18 +22,23 @@ readline.set_completer_delims('\n,')
 #  readline.parse_and_bind('tab: complete')
 
 wc = False
-user_id = check_data_in_table(cur, 'current_user')
+user_id = None
 current_date = datetime.date.today()
 
 
 while True:
-    while user_id == 0:
-        user_id, wc = set_user(cur)
-        if wc:
-            con.commit()
-            wc = not wc
-        
+    while True:
         user_id = check_data_in_table(cur, 'current_user')
+        if user_id == 0:
+            wc = users(cur)
+            if wc:
+                con.commit()
+                wc = not wc
+            else:
+                helps(messages['no_user'], 1)
+        else:
+            break
+        
         
     # Get user data and diary from db
     user_data = get_user_data_by_id(cur, user_id)
@@ -69,11 +74,17 @@ while True:
     elif action == 'h': helps(help_str[screen_name])
 
     elif action == 'u':
-        user_id, wc = set_user(cur)
-        if wc:
-            con.commit()
-            wc = not wc
-            #  \cuser_id = check_data_in_table(cur, 'current_user')
+        user_id = 0
+        while user_id == 0:
+            wc = users(cur)
+            if wc:
+                con.commit()
+                wc = not wc
+            else:
+                helps(messages['no_user'], 1)
+                continue
+            user_id = check_data_in_table(cur, 'current_user')
+
 
     elif action == 'l':
         screen_name = 'food_db'

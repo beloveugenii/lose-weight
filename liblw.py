@@ -26,6 +26,32 @@ def check_data_in_table(cur, table_name):
     if res: return res[0]
     else: return 0
 
+# Функция получает id
+# Возврашает словрь с параметрами пользователя
+def get_user_data_by_id(cur, user_id):
+    t = cur.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
+    return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
+
+# Получает указать на БД
+# Возвращает данные о пользователях в виде списка коретежей или None
+def get_user_info(cur):
+    return cur.execute('SELECT rowid, name FROM users').fetchall()
+
+# Получает указатель на БД и словарь с данными, и добавляет пользователя в БД
+# Вовращает True
+def add_user(cur, params):
+    return not cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", params).fetchone()
+
+# Получает указатель на БД и id пользователя, и удалеяет пользователя из БД
+# Вовращает True
+def remove_user(cur, user_id):
+    return not cur.execute("DELETE FROM users WHERE rowid = ?", (user_id,)).fetchone()
+
+
+
+
+
+
 # Функция для начального создания таблиц в БД
 def create_tables(cur):
     ct = 'CREATE TABLE IF NOT EXISTS'
