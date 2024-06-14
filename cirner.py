@@ -12,7 +12,7 @@ from liblw import *
 PROG_NAME = 'simple-sport'
 VERSION = '0.1.7.1'
 EXERCISES_DIR = sys.path[0] + '/basics'
-DB_NAME = sys.path[0] + '/db.sqlite'
+DB_NAME = sys.path[0] + '/data.db'
 DELAY = 1
 
 con = sqlite3.connect(DB_NAME)
@@ -67,7 +67,7 @@ def interactive():
 
 #    from_db = cur.execute("SELECT name FROM trainings").fetchall()
 
-    while True:
+    while len(r_files) < 1:
         clear()
         header(headers[screen_name])
 
@@ -90,10 +90,9 @@ def interactive():
                 if i > 0 and i <= len(files):
                     r_files.append(files[i - 1])
                 else:
-                    print(f"The file with the number '{i}' does not exist")
-                    sleep(1)
+                    helps(messages['no_file'], 1)
 
-            return r_files
+    return r_files
 
 def timer(title):
     timer = 0

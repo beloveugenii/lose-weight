@@ -7,13 +7,13 @@ from common import *
 STRINGS = path[0] + '/strings.json'
 TABLES = path[0] + '/tables.json'
 
-headers = dict(get_const(STRINGS, 'headers'))
-messages = dict(get_const(STRINGS, 'messages'))
-menu_str = dict(get_const(STRINGS, 'menu_str'))
-help_str = dict(get_const(STRINGS, 'help_str'))
-tables = dict(get_const(TABLES, 'tables'))
-params = dict(get_const(STRINGS, 'params'))
-speeds = get_const(STRINGS, 'speeds')
+headers = get_dict_from_json(STRINGS, 'headers')
+messages = get_dict_from_json(STRINGS, 'messages')
+menu_str = get_dict_from_json(STRINGS, 'menu_str')
+help_str = get_dict_from_json(STRINGS, 'help_str')
+tables = get_dict_from_json(TABLES, 'tables')
+params = get_dict_from_json(STRINGS, 'params')
+speeds = get_list_from_json(STRINGS, 'speeds')
 
 # Обработчик нажатия Ctrl-C
 def sigint_handler(signum, frame):

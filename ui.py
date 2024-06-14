@@ -2,9 +2,9 @@
 
 from os import get_terminal_size
 from time import sleep
-import json
+from json import load
 
-version = '0.0.2.3'
+version = '0.0.2.4'
 
 def helps(*args):
     # Принимает два параметра: строку для вывода и задержку времени показа сообщения в секундах
@@ -12,11 +12,16 @@ def helps(*args):
     sleep(args[1]) if len(args) > 1 else input()
     return False
 
-def get_const(file, key):
+def get_dict_from_json(file, key):
     # Функция принимает имя json-файла и ключ, который нужно экспориторовать
-    # Возвращает кортеж из данных по переданному ключу
+    # Возвращает ассоциативный массив из данных по переданному ключу
     with open(file) as f:
-        templates = json.load(f)
+        templates = load(f)
+    return dict(tuple(templates[key]))
+
+def get_list_from_json(file, key):
+    with open(file) as f:
+        templates = load(f)
     return tuple(templates[key])
 
 def line(): print('-' * get_terminal_size()[0])

@@ -72,6 +72,8 @@ while True:
     elif action == 'p': current_date -= datetime.timedelta(days = 1)
     elif action == 'n': current_date += datetime.timedelta(days = 1)
     elif action == 'h': helps(help_str[screen_name])
+    elif action == 's': 
+        os.system("python3 " + sys.path[0] + "/cirner.py -i")
 
     elif action == 'u':
         user_id = 0
