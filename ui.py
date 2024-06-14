@@ -20,6 +20,8 @@ def get_dict_from_json(file, key):
     return dict(tuple(templates[key]))
 
 def get_list_from_json(file, key):
+    # Функция принимает имя json-файла и ключ, который нужно экспориторовать
+    # Возвращает список из данных по переданному ключу
     with open(file) as f:
         templates = load(f)
     return tuple(templates[key])
