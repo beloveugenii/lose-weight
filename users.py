@@ -1,44 +1,73 @@
 import common
 from ui import *
 from liblw import *
+import sqlite3
+import sys
 
+DB_NAME = sys.path[0] + '/data.db'
 screen_name = 'users'
 
-# Основной функционал работы с пользователями
-# Получает указатель на БД
-def users(cur):
-    screen_name = 'users'
-    #  wc = False
-    user_id = 0
-    while user_id == 0:
-        users = get_user_info(cur)
+con = sqlite3.connect(DB_NAME)
+cur = con.cursor()
+create_tables(cur)
 
-        screen(headers[screen_name],
-               lambda: print_as_table(users, ' ') if users else helps(messages['nu'], 0),
+def main(cur):
+    screen_name = 'users'
+    wc = False
+    user_id = None
+
+    while not user_id:
+    
+        u_list = get_users_info(cur)
+        
+        action = screen(headers[screen_name],
+               lambda: print_as_table(u_list) if u_list else print(messages['nu']),
                menu_str[screen_name], 3
         )
-        action = input('>> ').lower().strip()
-
-
-        if action.isdigit():
-            user_id = int(action)
-
-            # Validating inputed number
-            if user_id < 1 or user_id > len(users):
-                helps(messages['not_in_list'], 0)
-                continue
+        
+        if action.isdigit(): 
+            a = int(action)
+            if a < 1 or a > len(u_list):
+                helps(messages['not_in_list'], 1)
+                #  continue
             else:
-                return set_user(cur, user_id)
-                #  return user_id, True
+                user_id = set_user(cur, a)
+                wc = True
 
-        elif action == 'a': return add_user(cur, get_new_user_data())
-        elif action.startswith('r'): return remove_user(cur, action[1])
-        elif action == 'q': exit(0)
-        elif action == 'h': helps(help_str[screen_name])
-        elif action == 'b': return False
-        else: helps(messages['ua'], 1)
+        
+        elif action == 'a': 
+            wc = add_user(cur, get_new_user_data()) 
+        
+        elif action.startswith('r'): 
+            wc = remove_user(cur, action[1])
 
+        elif action == 'h': 
+            helps(help_str[screen_name])
+        elif action == 'q': 
+            return -1
+        else: 
+            helps(messages['ua'])
 
+        if wc:
+            con.commit()
+            wc = not wc 
+
+    return user_id
+ 
+# Получает указать на БД
+# Возвращает данные о пользователях в виде списка коретежей или None
+def get_users_info(cur):
+    return cur.execute('SELECT rowid, name FROM users').fetchall()
+
+# Получает указатель на БД и словарь с данными, и добавляет пользователя в БД
+# Вовращает True
+def add_user(cur, params):
+    return not cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", params).fetchone()
+
+# Получает указатель на БД и id пользователя, и удалеяет пользователя из БД
+# Вовращает True
+def remove_user(cur, user_id):
+    return not cur.execute("DELETE FROM users WHERE rowid = ?", (user_id,)).fetchone()
 
 
 
@@ -48,7 +77,7 @@ def set_user(cur, user_id):
     if check_data_in_table(cur, 'current_user') == 0:
         stmt = 'INSERT INTO current_user VALUES(?)'
     cur.execute(stmt, (user_id,))
-    return True
+    return user_id
 
 
 
@@ -71,7 +100,7 @@ def get_new_user_data():
                 print(a, b)
 
             if k == 'activity':
-                helps('activity', 0)
+                helps(help_str['activity'])
 
             it = input(f'\n{promt}: ').strip()
 
@@ -141,4 +170,5 @@ def get_data(params, delay):
     return data
 
 
-
+rv = main(cur)
+exit(-1)

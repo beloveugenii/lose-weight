@@ -13,7 +13,7 @@ PROG_NAME = 'simple-sport'
 VERSION = '0.1.7.1'
 EXERCISES_DIR = sys.path[0] + '/basics'
 DB_NAME = sys.path[0] + '/data.db'
-DELAY = 1
+DELAY = 0
 
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
@@ -164,6 +164,7 @@ def do_training(file):
                 common.incr_or_av(STATISTIC, title)
                 sleep(DELAY)
 
+
 signal.signal(signal.SIGINT, sigint_handler)
 args = parser.parse_args()
 
@@ -179,10 +180,7 @@ if args.t:
 if args.i:
     FILES = interactive()
 elif args.f:
-    FILES = args.f[0]
-
-
-
+     FILES = args.f[0]
 
 if len(FILES) > 0:
     for f in FILES:
@@ -190,4 +188,5 @@ if len(FILES) > 0:
     show_statistic(STATISTIC)
 else:
     common.empty_start(PROG_NAME)
+
 

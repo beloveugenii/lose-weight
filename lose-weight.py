@@ -6,6 +6,9 @@ from users import *
 from ui import *
 from common import *
 from liblw import *
+import subprocess
+
+
 
 PROG_NAME = 'lose-weight'
 VERSION = '0.1.7.2'
@@ -26,19 +29,16 @@ user_id = None
 current_date = datetime.date.today()
 
 
+
+
 while True:
-    while True:
+    while user_id is None:
         user_id = check_data_in_table(cur, 'current_user')
-        if user_id == 0:
-            wc = users(cur)
-            if wc:
-                con.commit()
-                wc = not wc
-            else:
-                helps(messages['no_user'], 1)
-        else:
-            break
         
+        result = subprocess.run(['python3', sys.path[0] + '/users.py'], stdout=subprocess.PIPE, encoding='utf-8' )
+        
+        print(result.stdout)
+    
         
     # Get user data and diary from db
     user_data = get_user_data_by_id(cur, user_id)
@@ -59,7 +59,7 @@ while True:
     screen(
         user_data['name'] + ': ' + headers[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
         lambda:
-        print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else helps(messages['ndip'], 0),
+        print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(messages['ndip']),
         menu_str[screen_name], 2)
 
     # Enable tab-completion
@@ -73,9 +73,15 @@ while True:
     elif action == 'n': current_date += datetime.timedelta(days = 1)
     elif action == 'h': helps(help_str[screen_name])
     elif action == 's': 
-        os.system("python3 " + sys.path[0] + "/cirner.py -i")
+        os.system('python3 ' + sys.path[0] + '/cirner.py -i')
+        #  rv = subprocess.run(
+                #  ['python3', sys.path[0] + '/cirner.py', '-i' ], 
+            #  capture_output=True, encoding='utf-8'
+        #  )
+        #  print(rv)
 
     elif action == 'u':
+        os.system('python3 ' + sys.path[0] + '/users.py')
         user_id = 0
         while user_id == 0:
             wc = users(cur)
@@ -99,7 +105,7 @@ while True:
 
             screen(
                 headers[screen_name],
-                lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else helps(messages['nd'], 0),
+                lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print(messages['nd']),
                 menu_str[screen_name], 2)
 
             action = input('>> ').lower().strip()

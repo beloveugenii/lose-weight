@@ -1,16 +1,21 @@
 # libsui.py
 
-from os import get_terminal_size
+from os import popen
 from time import sleep
 from json import load
 
-version = '0.0.2.4'
+version = '0.0.2.7'
 
-def helps(*args):
+def helps(text, delay=0):
     # Принимает два параметра: строку для вывода и задержку времени показа сообщения в секундах
-    print(args[0])
-    sleep(args[1]) if len(args) > 1 else input()
+    print(text)
+    sleep(delay) if delay != 0 else input()
     return False
+
+def get_terminal_width():
+    rows, columns = popen('stty size', 'r').read().split()
+    rows, columns = int(rows), int(columns)
+    return columns
 
 def get_dict_from_json(file, key):
     # Функция принимает имя json-файла и ключ, который нужно экспориторовать
@@ -26,7 +31,7 @@ def get_list_from_json(file, key):
         templates = load(f)
     return tuple(templates[key])
 
-def line(): print('-' * get_terminal_size()[0])
+def line(): print('-' * get_terminal_width())
 
 def clear(): print('\033[H\033[2J', end='')
 
@@ -37,12 +42,6 @@ def restore_cursor(): print("\033[?25h")
 def save_cursor_pos(): print("\033[s")
 
 def restore_cursor_pos(): print("\033[u")
-
-def promt(what):
-    # takes a string
-    what = str(what)
-    # return gived string in looks 'String: '
-    return input(what[0].upper() + what[1:] + ': ')
 
 def get_fields_len(array):
     # takes a list of tuples
@@ -64,7 +63,7 @@ def get_fields_len(array):
     for c in range(cols):
         fields.append(max(len(str(array[r][c])) for r in range(rows)))
     
-    screen_width = get_terminal_size()[0]
+    screen_width = get_terminal_width()
 
     # defines wifth of empty fields 
     sep_len = (screen_width - sum(fields)) // ( len(fields) + 1)
@@ -76,7 +75,7 @@ def get_fields_len(array):
     return fields, sep_len
 
 
-def print_as_table(items, sep):
+def print_as_table(items, sep=' '):
     # takes the list of tuples
     fields, sep_len = get_fields_len(items)
 
@@ -91,7 +90,7 @@ def header(text):
     # takes a string and transform it to list of tuples with single element
     # print a string in center of screen
     line()
-    print_as_table([(text,), ],' ')
+    print_as_table([(text,), ])
     line()
 
 def menu(array, cols):
@@ -114,16 +113,17 @@ def menu(array, cols):
     # print list of tuples like menu
     line()
     if cols > 0:
-        print_as_table(menu_lst, ' ')
+        print_as_table(menu_lst)
         line()
 
-def screen(header_title, func, menu_lst, menu_cols):
+def screen(header_title, func, menu_lst, menu_cols, promt='>> '):
     # takes a list with header text, some function, menu list and number of menu columns
     # clear the screen and prints header, output of body function and menu
     clear()
     header(header_title)
     func()
     menu(menu_lst, menu_cols)
+    return input(promt).lower().strip()
 
 class Completer():
     def __init__(self, options):
