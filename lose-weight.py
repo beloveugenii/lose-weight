@@ -6,7 +6,6 @@ from users import *
 from ui import *
 from common import *
 from liblw import *
-import subprocess
 
 
 
@@ -19,44 +18,37 @@ cur = con.cursor()
 create_tables(cur)
 
 
+wc = False
+current_date = datetime.date.today()
+
+
 # Enable SIG handlers and configure readline
 signal(SIGINT, sigint_handler)
 readline.set_completer_delims('\n,')
 #  readline.parse_and_bind('tab: complete')
 
-wc = False
-user_id = None
-current_date = datetime.date.today()
 
 
 
 
 while True:
+    user_id = get_user_id(cur)
     while user_id is None:
-        user_id = check_data_in_table(cur, 'current_user')
-        
-        result = subprocess.run(['python3', sys.path[0] + '/users.py'], stdout=subprocess.PIPE, encoding='utf-8' )
-        
-        print(result.stdout)
-    
-        
-    # Get user data and diary from db
+        user_id, wc = users_main(cur, user_id)
+        if wc:
+            con.commit()
+            wc = not wc
+
     user_data = get_user_data_by_id(cur, user_id)
     food_list = get_food_list(cur)
 
     screen_name = 'diary'
-    clear()
-    if wc:
-        food_list = get_food_list(cur)
-        wc = not wc
-
-
 
     diary = get_data_for_diary(cur, current_date.strftime('%Y-%m-%d'), user_id)
     kcal_norm = float(get_calories_norm(user_data))
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
-    screen(
+    action = screen(
         user_data['name'] + ': ' + headers[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
         lambda:
         print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(messages['ndip']),
@@ -66,7 +58,6 @@ while True:
     readline.parse_and_bind('tab: complete')
     readline.set_completer(Completer([food[0] for food in food_list]).complete)
 
-    action = input('>> ').lower().strip()
 
     if action == 'q': break
     elif action == 'p': current_date -= datetime.timedelta(days = 1)
@@ -74,24 +65,15 @@ while True:
     elif action == 'h': helps(help_str[screen_name])
     elif action == 's': 
         os.system('python3 ' + sys.path[0] + '/cirner.py -i')
-        #  rv = subprocess.run(
-                #  ['python3', sys.path[0] + '/cirner.py', '-i' ], 
-            #  capture_output=True, encoding='utf-8'
-        #  )
-        #  print(rv)
 
     elif action == 'u':
-        os.system('python3 ' + sys.path[0] + '/users.py')
-        user_id = 0
-        while user_id == 0:
-            wc = users(cur)
+        old_user_id = user_id
+        user_id = None
+        while user_id is None:
+            user_id, wc = users_main(cur, old_user_id)
             if wc:
                 con.commit()
                 wc = not wc
-            else:
-                helps(messages['no_user'], 1)
-                continue
-            user_id = check_data_in_table(cur, 'current_user')
 
 
     elif action == 'l':
@@ -103,12 +85,10 @@ while True:
             # Disable tab-completion
             readline.parse_and_bind('tab: \t')
 
-            screen(
+            action = screen(
                 headers[screen_name],
                 lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print(messages['nd']),
                 menu_str[screen_name], 2)
-
-            action = input('>> ').lower().strip()
 
             if action == 'q': break
             elif action == 'h': helps(help_str[screen_name])
@@ -179,4 +159,5 @@ while True:
 
     else: helps(messages['ua'], 1)
 
-
+con.close()
+clear()

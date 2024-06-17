@@ -13,6 +13,7 @@ menu_str = get_dict_from_json(STRINGS, 'menu_str')
 help_str = get_dict_from_json(STRINGS, 'help_str')
 tables = get_dict_from_json(TABLES, 'tables')
 params = get_dict_from_json(STRINGS, 'params')
+user_params = get_dict_from_json(STRINGS, 'user_params')
 speeds = get_list_from_json(STRINGS, 'speeds')
 
 # Обработчик нажатия Ctrl-C
@@ -137,14 +138,9 @@ def print_big_nums(num):
 
 
 
-
-
-
-# Функция проверяет, есть ли в таблице хоть одна запись
+# Функция проверяет, есть ли в таблице записи и возвращает количество строк
 def check_data_in_table(cur, table_name):
-    res = cur.execute('SELECT * FROM ' + table_name).fetchone()
-    if res: return res[0]
-    else: return 0
+    return cur.execute('SELECT COUNT(*) FROM ' + table_name).fetchone()[0]
 
 # Функция получает id
 # Возврашает словрь с параметрами пользователя

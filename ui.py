@@ -1,21 +1,16 @@
 # libsui.py
 
-from os import popen
+from os import get_terminal_size
 from time import sleep
 from json import load
 
-version = '0.0.2.7'
+version = '0.0.2.6'
 
 def helps(text, delay=0):
     # Принимает два параметра: строку для вывода и задержку времени показа сообщения в секундах
     print(text)
     sleep(delay) if delay != 0 else input()
     return False
-
-def get_terminal_width():
-    rows, columns = popen('stty size', 'r').read().split()
-    rows, columns = int(rows), int(columns)
-    return columns
 
 def get_dict_from_json(file, key):
     # Функция принимает имя json-файла и ключ, который нужно экспориторовать
@@ -31,7 +26,7 @@ def get_list_from_json(file, key):
         templates = load(f)
     return tuple(templates[key])
 
-def line(): print('-' * get_terminal_width())
+def line(): print('-' * get_terminal_size()[0])
 
 def clear(): print('\033[H\033[2J', end='')
 
@@ -63,7 +58,7 @@ def get_fields_len(array):
     for c in range(cols):
         fields.append(max(len(str(array[r][c])) for r in range(rows)))
     
-    screen_width = get_terminal_width()
+    screen_width = get_terminal_size()[0]
 
     # defines wifth of empty fields 
     sep_len = (screen_width - sum(fields)) // ( len(fields) + 1)

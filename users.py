@@ -1,136 +1,100 @@
 import common
 from ui import *
 from liblw import *
-import sqlite3
 import sys
 
-DB_NAME = sys.path[0] + '/data.db'
 screen_name = 'users'
 
-con = sqlite3.connect(DB_NAME)
-cur = con.cursor()
-create_tables(cur)
-
-def main(cur):
-    screen_name = 'users'
-    wc = False
+def users_main(cur, old_user_id):
     user_id = None
+    wc = False
 
-    while not user_id:
-    
+    while user_id is None:
         u_list = get_users_info(cur)
-        
-        action = screen(headers[screen_name],
-               lambda: print_as_table(u_list) if u_list else print(messages['nu']),
-               menu_str[screen_name], 3
+        action = screen(
+                headers[screen_name],
+                lambda: print_as_table(
+                    [('',) + tuple([k for k in user_params.values()])] + u_list
+                    ) if u_list else print(messages['nu']),
+                menu_str[screen_name], 3
         )
         
         if action.isdigit(): 
-            a = int(action)
-            if a < 1 or a > len(u_list):
-                helps(messages['not_in_list'], 1)
-                #  continue
+            digit = int(action)
+            if digit < 1 or digit > len(u_list): helps(messages['not_in_list'], 1)
             else:
-                user_id = set_user(cur, a)
-                wc = True
+                user_id = digit
+                wc = set_user(cur, user_id)
 
+        elif action == 'a': return add_user(cur, get_new_user_data()) 
         
-        elif action == 'a': 
-            wc = add_user(cur, get_new_user_data()) 
-        
-        elif action.startswith('r'): 
-            wc = remove_user(cur, action[1])
+        elif action.startswith('r'): return remove_user(cur, action[1])
+        elif action.startswith('e'): pass
+        elif action == 'h': helps(help_str[screen_name])
+        elif action == 'qq': 
+            clear()
+            exit(-1)
+        elif action == 'q':
+            if old_user_id is None: helps(messages['no_user'], 1)
+            else: user_id = old_user_id
+        else: helps(messages['ua'], 1)
 
-        elif action == 'h': 
-            helps(help_str[screen_name])
-        elif action == 'q': 
-            return -1
-        else: 
-            helps(messages['ua'])
+    return user_id, wc
 
-        if wc:
-            con.commit()
-            wc = not wc 
-
+def get_user_id(cur):
+    try: user_id = cur.execute('SELECT user_id FROM current_user'). fetchone()[0]
+    except: user_id = None
     return user_id
- 
-# Получает указать на БД
-# Возвращает данные о пользователях в виде списка коретежей или None
+
 def get_users_info(cur):
-    return cur.execute('SELECT rowid, name FROM users').fetchall()
+    return cur.execute('SELECT rowid, * FROM users').fetchall()
 
-# Получает указатель на БД и словарь с данными, и добавляет пользователя в БД
-# Вовращает True
 def add_user(cur, params):
-    return not cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", params).fetchone()
+    cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", params).fetchone()
+    return None, True
 
-# Получает указатель на БД и id пользователя, и удалеяет пользователя из БД
-# Вовращает True
 def remove_user(cur, user_id):
-    return not cur.execute("DELETE FROM users WHERE rowid = ?", (user_id,)).fetchone()
-
-
-
+    cur.execute("DELETE FROM users WHERE rowid = ?", (user_id,)).fetchone()
+    return None, True
 
 def set_user(cur, user_id):
     stmt = 'UPDATE current_user SET user_id = ? where rowid = 1'
-    if check_data_in_table(cur, 'current_user') == 0:
-        stmt = 'INSERT INTO current_user VALUES(?)'
+    if check_data_in_table(cur, 'current_user') == 0: stmt = 'INSERT INTO current_user VALUES(?)'
     cur.execute(stmt, (user_id,))
-    return user_id
+    return True
 
-
-
+def convert_sex(sex):
+    return 'm' if sex in 'mMмМ' else 'f'
 
 def get_new_user_data():
-    new_user_params = {
-        'name': 'ваше имя', 'sex': 'ваш пол',
-        'age': 'ваш возраст', 'height': 'ваш рост',
-        'weight': 'ваш вес', 'activity': 'ваша активность'
-    }
-
-
-    for k in new_user_params:
-        promt = new_user_params[k][0].upper() + new_user_params[k][1:]
+    rd = dict()
+    
+    for k in user_params:
         it = ''
 
         while True:
-            clear()
-            for a, b in new_user_params.items():
-                print(a, b)
+            if k == 'activity': helps(help_str['activity'], 0.5)
+            it = input(f'{user_params[k][0].upper() + user_params[k][1:]}: ').strip()
 
-            if k == 'activity':
-                helps(help_str['activity'])
-
-            it = input(f'\n{promt}: ').strip()
-
+            if it == 'q':
+                break
             if k == 'name':
-                if len(it) > 2:
+                if len(it) > 1: 
+                    it = it[0].upper() + it[1:]
                     break
-                else:
-                    helps(messages['small_str'], 1)
-
+                else: helps(messages['small_str'], 1)
             elif k == 'sex':
-                if common.is_valid(it, 'in_lst', 'mMfFмМжЖ') and len(it) > 0:
+                if it in 'mMfFмМжЖ':
+                    it = convert_sex(it)
                     break
-                else:
-                    helps(messages['need_gender'], 1)
+                else: helps(messages['need_gender'], 1)
 
-            elif k in ('age', 'height', 'weight'):
-                if common.is_valid(it, 'is_num') and len(it) > 1:
-                    break
-                else:
-                    helps(messages['need_number'], 1)
+            elif k in ('age', 'height', 'weight', 'activity'):
+                if (it.isnumeric() or common.isfloat(it)): break
+                else: helps(messages['need_number'], 1)
+        rd[k] = it
 
-            elif k == 'activity':
-                if common.is_valid(it, 'is_fl') and not it.startswith('-') and len(it) > 1:
-                    break
-                else:
-                    helps(messages['need_number'], 1)
-
-        new_user_params[k] = it
-
-    return new_user_params
+    return rd
 
 
 
@@ -169,6 +133,3 @@ def get_data(params, delay):
 
     return data
 
-
-rv = main(cur)
-exit(-1)
