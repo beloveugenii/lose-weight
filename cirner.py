@@ -7,13 +7,11 @@ from random import choice
 from time import sleep
 from liblw import *
 
-#from init_db import *
-
 PROG_NAME = 'simple-sport'
 VERSION = '0.1.7.1'
 EXERCISES_DIR = sys.path[0] + '/basics'
 DB_NAME = sys.path[0] + '/data.db'
-DELAY = 0
+DELAY = 1
 
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()

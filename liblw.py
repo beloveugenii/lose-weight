@@ -7,14 +7,10 @@ from common import *
 STRINGS = path[0] + '/strings.json'
 TABLES = path[0] + '/tables.json'
 
-headers = get_dict_from_json(STRINGS, 'headers')
-messages = get_dict_from_json(STRINGS, 'messages')
-menu_str = get_dict_from_json(STRINGS, 'menu_str')
-help_str = get_dict_from_json(STRINGS, 'help_str')
-tables = get_dict_from_json(TABLES, 'tables')
-params = get_dict_from_json(STRINGS, 'params')
-user_params = get_dict_from_json(STRINGS, 'user_params')
-speeds = get_list_from_json(STRINGS, 'speeds')
+headers, messages, menu_str, help_str, params, user_params, BNUMS, food_params = get_from_json(STRINGS, 'dicts', 'headers', 'messages', 'menu_str', 'help_str', 'params', 'user_params', 'BNUMS', 'food_params')
+tables = get_from_json(TABLES, 'dicts', 'tables')[0]
+speeds = get_from_json(STRINGS, 'lists',  'speeds')[0]
+
 
 # Обработчик нажатия Ctrl-C
 def sigint_handler(signum, frame):
@@ -32,22 +28,6 @@ def incr_or_av(some_dict, key):
         some_dict[key] = 0
 
 
-
-
-BNUMS = { 0: ( "#########", "#########", "###   ###", "###   ###", "###   ###", "###   ###", "#########", "#########", ),
-        1: ( "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  ", "    ###  " ),
-        2: ( "#########", "#########", "      ###", "#########", "#########", "###      ", "#########", "#########", ),
-        3: ( "#########", "#########", "      ###", "  #######", "  #######", "      ###", "#########", "#########", ),
-        4: ( "###   ###", "###   ###", "###   ###", "#########", "#########", "      ###", "      ###", "      ###", ),
-        5: ( "#########", "#########", "###      ", "#########", "#########", "      ###", "#########", "#########", ),
-        6: ( "#########", "#########", "###      ", "#########", "#########", "###   ###", "#########", "#########", ),
-        7: ( "#########", "#########", "      ###", "      ###", "      ###", "      ###", "      ###", "      ###", ),
-        8: ( "#########", "#########", "###   ###", "#########", "#########", "###   ###", "#########", "#########", ),
-        9: ( "#########", "#########", "###   ###", "#########", "#########", "      ###", "#########", "#########", ),
-        -1: ( "         ", "         ", "         ", "         ", "         ", "         ", "         ", "         ", ), }
-
-
-
 SQLS = {
     'training_params':
         'SELECT rowid, * FROM trainings WHERE rowid = ?',
@@ -58,10 +38,8 @@ SQLS = {
 
 
     
-# Функция получает время в секундах и преобразует его в часы и минуты
 def sec_to_hms(sec):
-    '''takes time in seconds'''
-    '''returns formated string with time in hours, minutes and seconds'''
+    # Функция получает время в секундах и преобразует его в часы и минуты
     h, m = 0, 0
     res = ''
     h = sec // 3600
@@ -69,16 +47,13 @@ def sec_to_hms(sec):
     m = sec // 60
     sec -= 60 * m
 
-    if h > 0:
-        res += '{}ч '.format(h)
-    if m > 0:
-        res += '{}м '.format(m)
+    if h > 0: res += '{}ч '.format(h)
+    if m > 0: res += '{}м '.format(m)
     res += '{}с'.format(sec)
     return res
 
-# Функция получает время в часах и минутах и преобразует его в секунды
 def hms_to_sec(time):
-    '''takes time and return it in seconds'''
+    # Функция получает время в часах и минутах и преобразует его в секунды
     try:
         match = re.search(r'^([\d\.]+)(.*)$', time).groups()
         mult = 1
@@ -138,15 +113,8 @@ def print_big_nums(num):
 
 
 
-# Функция проверяет, есть ли в таблице записи и возвращает количество строк
-def check_data_in_table(cur, table_name):
-    return cur.execute('SELECT COUNT(*) FROM ' + table_name).fetchone()[0]
 
-# Функция получает id
-# Возврашает словрь с параметрами пользователя
-def get_user_data_by_id(cur, user_id):
-    t = cur.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
-    return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
+
 
 
 
@@ -162,12 +130,6 @@ def create_tables(cur):
     for t, p in tables.items():
         cur.execute(' '. join((ct, t , p)))
     
-    #  for table in ['default_params']:
-        #  if check_data_in_table(cur, table) is None:
-            #  cur.execute('INSERT INTO default_params VALUES(49504, 0.15, 0.04, 0.13)')
-
-
-
 def empty_start(PROG_NAME):
     '''Fileless startup handler'''
     print("No file set.\nUsage: " + PROG_NAME + ".py [OPTIONS] [FILE]")

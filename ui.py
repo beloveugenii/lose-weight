@@ -4,7 +4,7 @@ from os import get_terminal_size
 from time import sleep
 from json import load
 
-version = '0.0.2.6'
+version = '0.0.2.8'
 
 def helps(text, delay=0):
     # Принимает два параметра: строку для вывода и задержку времени показа сообщения в секундах
@@ -12,19 +12,16 @@ def helps(text, delay=0):
     sleep(delay) if delay != 0 else input()
     return False
 
-def get_dict_from_json(file, key):
-    # Функция принимает имя json-файла и ключ, который нужно экспориторовать
-    # Возвращает ассоциативный массив из данных по переданному ключу
-    with open(file) as f:
-        templates = load(f)
-    return dict(tuple(templates[key]))
-
-def get_list_from_json(file, key):
-    # Функция принимает имя json-файла и ключ, который нужно экспориторовать
-    # Возвращает список из данных по переданному ключу
-    with open(file) as f:
-        templates = load(f)
-    return tuple(templates[key])
+def get_from_json(file, mode, *keys):
+    # Функция принимает имя json-файла, режим работы и ключи для экспортирования
+    # Возвращает список словарей или список кортежей
+    l = list()
+    with open(file) as f: templates = load(f)
+    for k in keys:
+        t = tuple(templates[k])
+        if mode == 'dicts': t = dict(t)
+        l.append(t)
+    return l
 
 def line(): print('-' * get_terminal_size()[0])
 
@@ -119,6 +116,25 @@ def screen(header_title, func, menu_lst, menu_cols, promt='>> '):
     func()
     menu(menu_lst, menu_cols)
     return input(promt).lower().strip()
+
+# Функция возвращает строку (символ команды) и массив (с аргументами команды)
+# При остутствии чего-либо возвращает None
+def command_parser(line, commands):
+    c, args = None, []
+
+    if len(line) == 0:  return c, args
+
+    elif len(line) == 1 and line[0] in commands:
+        return line[0], args
+    
+    elif len(line) > 1 and line[0] in commands:
+        c = line[0]
+        args = line[1:].strip().split(' ')
+
+    return c, args
+
+
+
 
 class Completer():
     def __init__(self, options):

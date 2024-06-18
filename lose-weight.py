@@ -6,8 +6,7 @@ from users import *
 from ui import *
 from common import *
 from liblw import *
-
-
+from foods import *
 
 PROG_NAME = 'lose-weight'
 VERSION = '0.1.7.2'
@@ -17,19 +16,12 @@ con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
 create_tables(cur)
 
-
 wc = False
 current_date = datetime.date.today()
-
 
 # Enable SIG handlers and configure readline
 signal(SIGINT, sigint_handler)
 readline.set_completer_delims('\n,')
-#  readline.parse_and_bind('tab: complete')
-
-
-
-
 
 while True:
     user_id = get_user_id(cur)
@@ -48,16 +40,18 @@ while True:
     kcal_norm = float(get_calories_norm(user_data))
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
+    # Enable tab-completion
+    readline.parse_and_bind('tab: complete')
+    readline.set_completer(Completer([food[0] for food in food_list]).complete)
+
+
     action = screen(
         user_data['name'] + ': ' + headers[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
         lambda:
         print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(messages['ndip']),
         menu_str[screen_name], 2)
 
-    # Enable tab-completion
-    readline.parse_and_bind('tab: complete')
-    readline.set_completer(Completer([food[0] for food in food_list]).complete)
-
+   
 
     if action == 'q': break
     elif action == 'p': current_date -= datetime.timedelta(days = 1)
@@ -77,32 +71,15 @@ while True:
 
 
     elif action == 'l':
-        screen_name = 'food_db'
-        while True:
-            clear()
-            res = get_food_data(cur)
-
-            # Disable tab-completion
-            readline.parse_and_bind('tab: \t')
-
-            action = screen(
-                headers[screen_name],
-                lambda: print_as_table( [('title','kcal','p', 'f', 'c',)] + res,  ' ') if res else print(messages['nd']),
-                menu_str[screen_name], 2)
-
-            if action == 'q': break
-            elif action == 'h': helps(help_str[screen_name])
-            elif action in 'ar': helps(messages['not_impl'], 1)
-
-            elif action not in 'arqh' and len(action) > 3:
-
-                new_food_params = {'kcal': 'калорийность', 'p': 'содержание белков',
-                   'f': 'содержание жиров','c': 'содержание углеводов'}
-                d = get_data(new_food_params, 1)
-                d['title'] = action
-                add_new_food(cur, d)
+        end_work = False
+        while not end_work:
+            end_work, wc = foods_main(cur)
+            if wc:
                 con.commit()
-                wc = True
+                wc = not wc
+
+
+
 
             #  elif action == 'a':
                 #  screen_name = 'analyzer'
@@ -127,7 +104,7 @@ while True:
 
 
            
-            else: helps(messages['ua'], 1)
+            #  else: helps(messages['ua'], 1)
 
     elif action not in 'lpnqht' and len(action) > 2:
         new_entry = { 'date': current_date, 'user': user_id, }
@@ -161,3 +138,8 @@ while True:
 
 con.close()
 clear()
+
+
+
+
+

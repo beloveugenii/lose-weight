@@ -47,8 +47,7 @@ def get_data_for_diary(cur, formated_date, user_id):
         WHERE d.title = f.title AND date = ? AND user = ?
         ''', (formated_date, user_id)).fetchall()
 
-def get_food_data(cur):
-    return sorted(cur.execute('SELECT title, CAST(kcal AS INT), CAST(p AS INT), CAST(f AS INT), CAST(c AS INT) FROM food').fetchall())
+
 
 def get_food_list(cur):
     return cur.execute('SELECT title FROM food').fetchall()# + cur.execute('SELECT title FROM dishes').fetchall()
@@ -64,5 +63,36 @@ def add_in_diary(cur, data):
 
 def add_new_food(cur, data):
     cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', data)
+
+def get_data(params, delay):
+    data = dict()
+    for key in params:
+        if key in ('title', 'name', 'sex'):
+            while True:
+                it = input(params[key][0].upper() + params[key][1:] + ': ').strip()
+                if len(it) < 2 and not key == 'sex':
+                    helps('small_str', delay)
+                else:
+                    if key == 'sex' and it not in 'мМжЖmMfF':
+                        helps('need_gender', delay)
+                    else:
+                        data[key] = it
+                        break
+        elif key in ('kcal', 'age', 'height', 'weight', 'value', 'activity', 'p', 'c', 'f'):
+            while True:
+                if key == 'activity': helps(help_str['activity'], 0)
+
+                try:
+                    it = input(params[key] + ': ')
+
+                    if it == '':
+                        it = 1 if key == 'activity' else 0
+
+                    data[key] = float(it)
+                    break
+                except ValueError:
+                    helps('need_number', delay)
+
+    return data
 
 
