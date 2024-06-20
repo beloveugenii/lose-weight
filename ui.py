@@ -12,7 +12,7 @@ def helps(text, delay=0):
     sleep(delay) if delay != 0 else input()
     return False
 
-def get_from_json(file, mode, *keys):
+def get_from_json(file, mode='lists', *keys):
     # Функция принимает имя json-файла, режим работы и ключи для экспортирования
     # Возвращает список словарей или список кортежей
     l = list()
