@@ -147,7 +147,7 @@ class Completer():
             # Если какой-то текст передан в метод
             if text:
                 # вернуть список слов из списка, которые начинаются на текст
-                self.matches = [s for s in self.options if s and s.startswith(text.lstrip())]
+                self.matches = [s + " " for s in self.options if s and s.startswith(text.lstrip())]
             else:
                 # иначе вернуть весь список
                 self.matches = self.options[:]
