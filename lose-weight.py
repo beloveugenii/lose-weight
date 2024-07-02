@@ -7,9 +7,10 @@ from ui import *
 from common import *
 from liblw import *
 from foods import *
+import completer as c
 
 PROG_NAME = 'lose-weight'
-VERSION = '0.1.7.2'
+VERSION = '0.1.7-3'
 DB_NAME = sys.path[0] + '/data.db'
 
 con = sqlite3.connect(DB_NAME)
@@ -22,9 +23,11 @@ current_date = datetime.date.today()
 # Enable SIG handlers and configure readline
 signal(SIGINT, sigint_handler)
 readline.set_completer_delims('\n,')
+readline.parse_and_bind('tab: complete')
 
 while True:
     user_id = get_user_id(cur)
+    readline.set_completer(c.Completer(dict().fromkeys([e[0] for e in menu_str['users']])).complete)
     while user_id is None:
         user_id, wc = users_main(cur, user_id)
         if wc:
@@ -41,8 +44,7 @@ while True:
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
     # Enable tab-completion
-    readline.parse_and_bind('tab: complete')
-    readline.set_completer(Completer([food[0] for food in food_list]).complete)
+    readline.set_completer(c.Completer(dict().fromkeys([food[0] for food in food_list])).complete)
 
 
     action = screen(
@@ -63,6 +65,7 @@ while True:
     elif action == 'u':
         old_user_id = user_id
         user_id = None
+        readline.set_completer(c.Completer(dict().fromkeys([e[0] for e in menu_str['users']])).complete)
         while user_id is None:
             user_id, wc = users_main(cur, old_user_id)
             if wc:

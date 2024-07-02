@@ -24,7 +24,7 @@ def users_main(cur, old_user_id):
             else:
                 user_id = digit
                 wc = set_user(cur, user_id)
-        elif action == 'qq': 
+        elif action == 'q': 
             clear()
             exit(-1)
         else:
@@ -32,10 +32,10 @@ def users_main(cur, old_user_id):
 
             if do == 'a': return add_user(cur, get_new_user_data()) 
             elif do == 'r': return remove_user(cur, args[0])
-            elif do == 'e': helps(messages['not_impl'], 0.5)
+            elif do == 'e': helps(messages['not_impl'], 1)
             elif do == 'h': helps(help_str[screen_name])
-            elif do == 'q':
-                if old_user_id is None: helps(messages['no_user'], 0.5)
+            elif do == 'b':
+                if old_user_id is None: helps(messages['no_user'], 1)
                 else: user_id = old_user_id
             else: helps(messages['ua'], 1)
 

@@ -1,4 +1,5 @@
 import readline
+import re
 
 class Completer():
     def __init__(self, options):
@@ -30,8 +31,8 @@ class Completer():
 
                     if being_completed:
                         # параметры сопоставления с частью ввода
-                        self.current_candidates = [ w  + ' ' for w in candidates
-                                                    if w.startswith(being_completed) ]
+                        self.current_candidates = [ w  + ' ' for w in candidates if w and w.startswith(being_completed) ]
+                        #  self.current_candidates = [ w  + ' ' for w in candidates if re.match(being_completed, w) ]
                     else:
                         # соответствие пустой строке, используются все кандидаты
                         self.current_candidates = candidates
