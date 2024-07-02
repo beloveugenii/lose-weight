@@ -1,5 +1,4 @@
 import common
-import readline
 from ui import *
 from liblw import *
 
@@ -7,17 +6,9 @@ screen_name = 'food_db'
 
 def foods_main(cur):
     wc = False
-    readline.set_completer_delims('\n,')
-    readline.parse_and_bind('tab: complete')
 
     while True:
         res = get_food_data(cur)
-        
-        readline.set_completer(
-                Completer(
-                    [k[0] for k in menu_str[screen_name]] + 
-                    [food[0] for food in res]).complete
-                )
         
         action = screen(
                 headers[screen_name],

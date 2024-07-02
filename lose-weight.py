@@ -27,7 +27,7 @@ readline.parse_and_bind('tab: complete')
 
 while True:
     user_id = get_user_id(cur)
-    readline.set_completer(c.Completer(dict().fromkeys([e[0] for e in menu_str['users']])).complete)
+    readline.set_completer(Completer([e[0] for e in menu_str['users']]).complete)
     while user_id is None:
         user_id, wc = users_main(cur, user_id)
         if wc:
@@ -44,7 +44,8 @@ while True:
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
     # Enable tab-completion
-    readline.set_completer(c.Completer(dict().fromkeys([food[0] for food in food_list])).complete)
+    #  readline.set_completer(c.Completer(dict().fromkeys([food[0] for food in food_list])).complete)
+    readline.set_completer(Completer([food[0] for food in food_list]).complete)
 
 
     action = screen(
@@ -65,7 +66,7 @@ while True:
     elif action == 'u':
         old_user_id = user_id
         user_id = None
-        readline.set_completer(c.Completer(dict().fromkeys([e[0] for e in menu_str['users']])).complete)
+        readline.set_completer(Completer([e[0] for e in menu_str['users']]).complete)
         while user_id is None:
             user_id, wc = users_main(cur, old_user_id)
             if wc:
@@ -75,6 +76,7 @@ while True:
 
     elif action == 'l':
         end_work = False
+        readline.set_completer(Completer([e[0] for e in menu_str['food_db']] + [food[0] for food in food_list]).complete)
         while not end_work:
             end_work, wc = foods_main(cur)
             if wc:
