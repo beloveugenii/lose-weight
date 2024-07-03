@@ -1,55 +1,81 @@
 #!/usr/bin/env python3
 
 import sqlite3, datetime, readline, sys, os
-from signal import signal, SIGINT
 from users import *
 from ui import *
 from common import *
 from liblw import *
 from foods import *
 import completer as c
+import argparse
 
-PROG_NAME = 'lose-weight'
-VERSION = '0.1.7-3'
+VERSION = '0.1.8-0'
 DB_NAME = sys.path[0] + '/data.db'
 
+parser = argparse.ArgumentParser(
+        description='A simple program that allows you to keep track of the time worked',
+)
+parser.add_argument(
+        '-v',
+        '--version', 
+        action='version', 
+        version='%(prog)s ' + VERSION, 
+        help='show version and exit'
+)
+
+args = parser.parse_args()
+# Подключаемся к БД
+# И создаем таблицы, если их нет
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
-d_delims = readline.get_completer_delims()
 create_tables(cur)
 
 wc = False
 current_date = datetime.date.today()
 
-# Enable SIG handlers and configure readline
-signal(SIGINT, sigint_handler)
+# Устанавливаем дополнение при нажатии табуляции
 readline.parse_and_bind('tab: complete')
 
 while True:
+    # Получаем id выбраного пользователя, если есть
+    # Или выбираем его
+    # Или создаем его
     user_id = get_user_id(cur)
-    #  readline.set_completer(Completer([e[0] for e in menu_str['users']]).complete)
-    readline.set_completer(c.Completer({'r': [u[0] for u in get_users_info(cur)]}).complete)
     while user_id is None:
         user_id, wc = users_main(cur, user_id)
         if wc:
             con.commit()
             wc = not wc
 
+    # Получаем данные о выбранном пользователе
     user_data = get_user_data_by_id(cur, user_id)
+    
+    if user_data is None:
+        # Если данных нет - возвращаемся к выбору пользователя 
+        helps(messages['not_in_list'])
+        clean_current_user(cur)
+        con.commit()
+        continue
+
+    # Получаем записи о всех продуктах
     food_list = get_food_list(cur)
 
     screen_name = 'diary'
-
+    buttons = [e[0] for e in menu_str[screen_name]]
+    
+    # Получаем записи из дневника
+    # Подсчитываем норму и суммируем имеющееся
     diary = get_data_for_diary(cur, current_date.strftime('%Y-%m-%d'), user_id)
     kcal_norm = float(get_calories_norm(user_data))
     kcal_per_day = '%.1f' % sum([line[2] for line in diary])
 
-    # Enable tab-completion
-    #  readline.set_completer(c.Completer(dict().fromkeys([food[0] for food in food_list])).complete)
     readline.set_completer_delims('\n,')
-    readline.set_completer(Completer([food[0] for food in food_list]).complete)
+    readline.set_completer(c.Completer(dict().fromkeys(
+            buttons + 
+            [food[0] for food in food_list]
+    )).complete)
 
-
+    # Вывод экрана
     action = screen(
         user_data['name'] + ': ' + headers[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
         lambda:
@@ -58,19 +84,25 @@ while True:
 
    
 
-    if action == 'q': break
-    elif action == 'p': current_date -= datetime.timedelta(days = 1)
-    elif action == 'n': current_date += datetime.timedelta(days = 1)
-    elif action == 'h': helps(help_str[screen_name])
+    if action == 'q': 
+        # Выход из проложения
+        break
+    elif action == 'p':
+        # Переход на предыдущий день
+        current_date -= datetime.timedelta(days = 1)
+    elif action == 'n': 
+        # Переход на следующий день
+        current_date += datetime.timedelta(days = 1)
+    elif action == 'h': 
+        # Внутренняя справка
+        helps(help_str[screen_name])
     elif action == 's': 
-        os.system('python3 ' + sys.path[0] + '/cirner.py -i')
+        # Запуск спортивного ассистента
+        os.system('python3 ' + sys.path[0] + '/trainer.py -i')
 
     elif action == 'u':
-        old_user_id = user_id
-        user_id = None
-        #  readline.set_completer(Completer([e[0] for e in menu_str['users']]).complete)
-        readline.set_completer_delims(d_delims)
-        readline.set_completer(c.Completer({'r': [str(u[0]) for u in get_users_info(cur)]}).complete)
+        # Переход к меню пользователей
+        old_user_id, user_id = user_id, None
         while user_id is None:
             user_id, wc = users_main(cur, old_user_id)
             if wc:
@@ -79,8 +111,8 @@ while True:
 
 
     elif action == 'l':
+        # Переход к меню продуктов
         end_work = False
-        readline.set_completer(Completer([e[0] for e in menu_str['food_db']] + [food[0] for food in food_list]).complete)
         while not end_work:
             end_work, wc = foods_main(cur)
             if wc:
@@ -143,7 +175,9 @@ while True:
             add_in_diary(cur, new_entry)
             con.commit()
 
-    else: helps(messages['ua'], 1)
+    else: 
+        # Неподдерживаемое действие
+        helps(messages['ua'], 1)
 
 con.close()
 clear()

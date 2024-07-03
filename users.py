@@ -1,26 +1,38 @@
 import common
 from ui import *
 from liblw import *
+import completer as c
+import readline
 
 screen_name = 'users'
+d_delims = readline.get_completer_delims()
 
 def users_main(cur, old_user_id):
     user_id = None
     wc = False
-
     while user_id is None:
         u_list = get_users_info(cur)
+        buttons = [e[0] for e in menu_str[screen_name]]
+        user_nums = [str(u[0]) for u in u_list]
+        button_tree = dict().fromkeys(buttons + user_nums)
+        button_tree['r'] = user_nums
+        button_tree['e'] = user_nums
+
+        readline.set_completer_delims(d_delims)
+        readline.set_completer(c.Completer(button_tree).complete)
+
         action = screen(
-                headers[screen_name],
-                lambda: print_as_table(
-                    [('',) + tuple([k for k in user_params.values()])] + u_list
-                    ) if u_list else print(messages['nu']),
-                menu_str[screen_name], 3
+            headers[screen_name],
+            lambda: print_as_table(
+                [('',) + tuple([k for k in user_params.values()])] + u_list
+            ) if u_list else print(messages['nu']),
+            menu_str[screen_name], 3
         )
         
         if action.isdigit(): 
             digit = int(action)
-            if digit < 1 or digit > len(u_list): helps(messages['not_in_list'], 1)
+            if digit not in [u[0] for u in u_list]: 
+                helps(messages['not_in_list'], 1)
             else:
                 user_id = digit
                 wc = set_user(cur, user_id)
@@ -28,12 +40,16 @@ def users_main(cur, old_user_id):
             clear()
             exit(-1)
         else:
-            do, args = command_parser(action, [k[0] for k in menu_str[screen_name]])
+            do, args = command_parser(action, buttons)
 
-            if do == 'a': return add_user(cur, get_new_user_data()) 
-            elif do == 'r': return remove_user(cur, args[0])
-            elif do == 'e': helps(messages['not_impl'], 1)
-            elif do == 'h': helps(help_str[screen_name])
+            if do == 'a': 
+                return add_user(cur, get_new_user_data()) 
+            elif do == 'r': 
+                return remove_user(cur, args[0])
+            elif do == 'e': 
+                helps(messages['not_impl'], 1)
+            elif do == 'h': 
+                helps(help_str[screen_name])
             elif do == 'b':
                 if old_user_id is None: helps(messages['no_user'], 1)
                 else: user_id = old_user_id
@@ -54,7 +70,13 @@ def get_user_id(cur):
 # Возврашает словрь с параметрами пользователя
 def get_user_data_by_id(cur, user_id):
     t = cur.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
-    return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
+    try:
+        return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
+    except:
+        return t
+
+def clean_current_user(cur):
+    return cur.execute('DELETE FROM current_user')
 
 def get_users_info(cur):
     return cur.execute('SELECT rowid, * FROM users').fetchall()
@@ -83,11 +105,20 @@ def get_new_user_data():
     rd = dict()
     for k in user_params:
         while True:
-            clear()
-            header(headers['new_user'])
-            print_as_table([('', user_params[i], rd.get(i, ''), '') for i in user_params]), 
-            line()
-            if k == 'activity': helps(help_str['activity'], 0.5)
+            if k != 'activity':
+                clear()
+                header(headers['new_user'])
+                print_as_table([('', user_params[i], rd.get(i, ''), '') for i in user_params]), 
+                line()
+                readline.set_completer(c.Completer(dict()).complete)
+                if k == 'sex':
+                    readline.set_completer(c.Completer(dict().fromkeys(('м', 'ж'))).complete)
+
+            else:
+                clear()
+                helps(help_str['activity'], 0.1)
+                line()
+                readline.set_completer(c.Completer(dict().fromkeys(('1.2', '1.375', '1.55', '1.7', '1.9'))).complete)
 
             it = input(f'{user_params[k][0].upper() + user_params[k][1:]}: ').strip()
             

@@ -1,30 +1,38 @@
 import common
 from ui import *
 from liblw import *
+import completer as c
+import readline
 
 screen_name = 'food_db'
+d_delims = readline.get_completer_delims()
 
 def foods_main(cur):
     wc = False
 
     while True:
         res = get_food_data(cur)
+        buttons = [e[0] for e in menu_str[screen_name]]
+        readline.set_completer(c.Completer(dict().fromkeys(
+            buttons + 
+            [food[0] for food in res]
+        )).complete)
         
         action = screen(
                 headers[screen_name],
-                lambda: print_as_table( [tuple(food_params.values())] + res,  ' ') if res else print(messages['nd']),
+                lambda: print_as_table( [tuple(food_params.values())] + res[:20],  ' ') if res else print(messages['nd']),
                 menu_str[screen_name], 2
         )
 
         if action in [food[0] for food in res]:
             clear()
-            line()
+            header(headers['about_dish'])
             print_as_table([tuple(food_params.values())] + get_one_food_data(cur, action))
             line()
             input()
             continue
         
-        if action in [k[0] for k in menu_str[screen_name]]:
+        if action in buttons:
         
             if action == 'q': 
                 return True, False
