@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#  from lib import *
 import common 
 from ui import *
 import argparse, signal, sys, os, sqlite3
@@ -7,11 +6,10 @@ from random import choice
 from time import sleep
 from liblw import *
 
-PROG_NAME = 'simple-sport'
 VERSION = '0.1.7.1'
 EXERCISES_DIR = sys.path[0] + '/basics'
 DB_NAME = sys.path[0] + '/data.db'
-DELAY = 1
+DELAY = 0.001
 
 con = sqlite3.connect(DB_NAME)
 cur = con.cursor()
@@ -22,7 +20,7 @@ parser = argparse.ArgumentParser(description='Minimalistic console sport assista
 
 parser.add_argument('-f', action='append', nargs='+', help='start training from files')
 parser.add_argument('-t', action='store', help='start timer with given exercise name')
-parser.add_argument('-v','--version', action='version', version=f'{PROG_NAME} {VERSION}')
+parser.add_argument('-v','--version', action='version', version='%{prog}s'+ VERSION)
 #  parser.add_argument('-s', '--sound', action='store_true', help='enables sound in Termux')
 parser.add_argument('-i', action='store_true', help='start an interactive mode')
 
@@ -70,7 +68,7 @@ def interactive():
         header(headers[screen_name])
 
         for i in range(len(files)):
-            print(i + 1, parse_file(files[i])['name'])
+            print(i + 1, parse_file(files[i])['title'])
   #      print()
  #       for i in range(len(from_db)):
 #            print(i + 1, get_training_from_db(i + 1)['name'])
@@ -81,7 +79,9 @@ def interactive():
         a = input('>> ')
 
         if a == 'q': exit(0)
-        elif a in ('cer'): helps(messages['not_impl'], 1)
+        elif a == 'c':
+            create_training(cur)
+        elif a in ('er'): helps(messages['not_impl'], 1)
         elif a == 'h': helps(help_str[screen_name])
         else:
             for i in [int(l) for l in a.split() if l.isnumeric()]:
@@ -91,6 +91,19 @@ def interactive():
                     helps(messages['no_file'], 1)
 
     return r_files
+
+def create_training(cur):
+    params = dict().fromkeys(training_params.keys())
+    print(params)
+    exit(0)
+    print('Время создать тренировку')
+    for param in params.keys():
+        print(f"Введите {training_params[param]}")
+    title = input()
+
+
+
+    input
 
 def timer(title):
     timer = 0
@@ -116,7 +129,7 @@ def do_training(file):
 
     # Parse every file
     data = parse_file(file)
-
+    
     for repeat in range(int(data['repeats'])):
         # For every repeat generate exercises list
         current_list = common.prepare_training(data, repeat)
@@ -136,11 +149,11 @@ def do_training(file):
 
             # main screen with exercise and timer
             clear()
-            header(f'{data["name"]} {repeat + 1} / {data["repeats"]}')
+            header(f'{data["title"]} {repeat + 1} / {data["repeats"]}')
 
             print(f'Текущее упражнение: {title} {duration}')
 
-            if title not in params.values():
+            if title not in training_params.values():
                 print(f'Скорость выполнения: {choice(speeds)}' + '\n' * 3)
             else:
                 print('\n' * 3)
@@ -152,7 +165,7 @@ def do_training(file):
                 print(f'Следующее упражнение: {next_title} {next_duration}',end='')
             else:
                 if repeat != int(data['repeats']) - 1:
-                    print(params['relax'], end='')
+                    print(training_params['relax'], end='')
                 else:
                     print(end='')
 
@@ -179,6 +192,8 @@ if args.i:
     FILES = interactive()
 elif args.f:
      FILES = args.f[0]
+
+
 
 if len(FILES) > 0:
     for f in FILES:

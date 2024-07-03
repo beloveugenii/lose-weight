@@ -7,7 +7,7 @@ from common import *
 STRINGS = path[0] + '/strings.json'
 TABLES = path[0] + '/tables.json'
 
-headers, messages, menu_str, help_str, params, user_params, BNUMS, food_params = get_from_json(STRINGS, 'dicts', 'headers', 'messages', 'menu_str', 'help_str', 'params', 'user_params', 'BNUMS', 'food_params')
+headers, messages, menu_str, help_str, training_params, user_params, BNUMS, food_params = get_from_json(STRINGS, 'dicts', 'headers', 'messages', 'menu_str', 'help_str', 'training_params', 'user_params', 'BNUMS', 'food_params')
 tables = get_from_json(TABLES, 'dicts', 'tables')[0]
 speeds = get_from_json(STRINGS, 'lists',  'speeds')[0]
 
@@ -79,16 +79,16 @@ def prepare_training(data, current_repeat):
         k =  k.split('|')
         v = hms_to_sec(v)
 
-        r_list.append((params['pause'], hms_to_sec(data['pause'])))
+        r_list.append((training_params['pause'], hms_to_sec(data['pause'])))
         r_list.append((k[randint(0, len(k) - 1)], v))
 
     if current_repeat == 0:
-        r_list[0] = (params['prepare'], hms_to_sec(data['pause']))
+        r_list[0] = (training_params['prepare'], hms_to_sec(data['pause']))
     else:
-        r_list[0] = (params['relax'], hms_to_sec(data['relax']))
+        r_list[0] = (training_params['relax'], hms_to_sec(data['relax']))
 
     if current_repeat == int(data['repeats']) - 1:
-        r_list.append((params['on_end'], hms_to_sec(data['on_end'])))
+        r_list.append((training_params['on_end'], hms_to_sec(data['on_end'])))
 
     return r_list
 
@@ -144,7 +144,7 @@ def show_statistic(stat_dict):
     clear()
     header(headers['statistic'])
     for title, duration in stat_dict.items():
-        if title in params.values():
+        if title in training_params.values():
             continue
         total_counter += duration
         print(title + ': ' + sec_to_hms(duration))
@@ -175,7 +175,7 @@ def parse_file(file_name):
     '''takes a training file name and parses it'''
     '''return dict with data from .fct file'''
 
-    data = dict.fromkeys(('name', 'repeats', 'pause', 'relax', 'on_end', ), None)
+    data = dict.fromkeys(('title', 'repeats', 'pause', 'relax', 'on_end', ), None)
     data['training_list'] = list()
 
     try:
