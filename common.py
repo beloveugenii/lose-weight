@@ -13,11 +13,26 @@ def str_to_float(s=0):
 # Функция проверяет, является ли переданное числом с точкой
 # и возвращает логическое значение
 def isfloat(what):
-    if what.startswith('-'):
-        what = what[1:]
-    parts = what.split('.')
-    return len(parts) == 2 and parts[0].isnumeric() and parts[1].isnumeric()
+    what = str(what).removeprefix('-')
+    parts = what.partition('.')
+    return parts[0].isnumeric() and parts[2].isnumeric()
 
+def isdate(what):
+    t = []
+    for ch in '-.':
+        if ch in what:
+            t = what.split(ch)
+    
+    if len(t) != 3: return False
+    
+    for part in t:
+        for ch in part:
+            if not ch.isnumeric():
+                return False
+
+    return True
+
+    
 # Функция для проверки, является ли значение требуемым типом
 def is_valid(value, type_str, char_list = None):
 
@@ -64,34 +79,22 @@ def add_in_diary(cur, data):
 def add_new_food(cur, data):
     cur.execute('INSERT INTO food VALUES(:title, :kcal, :p, :f, :c)', data)
 
-def get_data(params, delay):
+def get_new_food_data(params):
     data = dict()
     for key in params:
-        if key in ('title', 'name', 'sex'):
-            while True:
-                it = input(params[key][0].upper() + params[key][1:] + ': ').strip()
-                if len(it) < 2 and not key == 'sex':
-                    helps('small_str', delay)
-                else:
-                    if key == 'sex' and it not in 'мМжЖmMfF':
-                        helps('need_gender', delay)
-                    else:
-                        data[key] = it
-                        break
-        elif key in ('kcal', 'age', 'height', 'weight', 'value', 'activity', 'p', 'c', 'f'):
-            while True:
-                if key == 'activity': helps(help_str['activity'], 0)
-
-                try:
-                    it = input(params[key] + ': ')
-
-                    if it == '':
-                        it = 1 if key == 'activity' else 0
-
-                    data[key] = float(it)
+        while True:
+            it = input(params[key][0].upper() + params[key][1:] + ': ').strip()
+            if key == 'title':
+                if len(it) > 1:
                     break
-                except ValueError:
-                    helps('need_number', delay)
+                else:
+                    helps(messages['small_str'], 1)
+
+            elif key in ('kcal', 'value', 'p', 'c', 'f'):
+                if it.isnumeric() or isfloat(it): break
+                else: helps(messages['need_number'], 1)
+
+        data[key] = it
 
     return data
 

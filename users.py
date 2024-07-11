@@ -69,7 +69,11 @@ def get_user_id(cur):
 # Функция получает id
 # Возврашает словрь с параметрами пользователя
 def get_user_data_by_id(cur, user_id):
-    t = cur.execute('SELECT rowid, * FROM users WHERE rowid = ?', (user_id,)).fetchone()
+    t = cur.execute(
+            '''SELECT rowid, name, sex, date() - birthdate AS age, height, weight, activity 
+            FROM users 
+            WHERE rowid == ?''', (user_id,)
+        ).fetchone()
     try:
         return dict(map(lambda *args: args, ('rowid', 'name', 'sex', 'age', 'height', 'weight', 'activity'), t) )
     except:
@@ -82,7 +86,7 @@ def get_users_info(cur):
     return cur.execute('SELECT rowid, * FROM users').fetchall()
 
 def add_user(cur, params):
-    cur.execute("INSERT INTO users VALUES(:name, :sex, :age, :height, :weight, :activity)", params).fetchone()
+    cur.execute("INSERT INTO users VALUES(:name, :sex, :birthdate, :height, :weight, :activity)", params).fetchone()
     return None, True
 
 def remove_user(cur, user_id):
@@ -120,7 +124,7 @@ def get_new_user_data():
                 line()
                 readline.set_completer(c.Completer(dict().fromkeys(('1.2', '1.375', '1.55', '1.7', '1.9'))).complete)
 
-            it = input(f'{user_params[k][0].upper() + user_params[k][1:]}: ').strip()
+            it = input(user_params[k][0].upper() + user_params[k][1:] + ': ').strip()
             
             if it == 'q': break
             if k == 'name':
@@ -128,14 +132,21 @@ def get_new_user_data():
                     it = it[0].upper() + it[1:]
                     break
                 else: helps(messages['small_str'], 1)
+            elif k == 'birthdate':
+                if common.isdate(it):
+                    if '.' in it:
+                        t = it.split('.')
+                        it = '-'.join(t[::-1])
+                    break
+                else: helps(messages['need_date'],1 )
             elif k == 'sex':
                 if it in 'mMfFмМжЖ' and len(it) > 0:
                     it = convert_sex(it)
                     break
                 else: helps(messages['need_gender'], 1)
 
-            elif k in ('age', 'height', 'weight', 'activity'):
-                if (it.isnumeric() or common.isfloat(it)): break
+            elif k in ('height', 'weight', 'activity'):
+                if it.isnumeric() or common.isfloat(it): break
                 else: helps(messages['need_number'], 1)
         rd[k] = it
 

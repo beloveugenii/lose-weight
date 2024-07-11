@@ -7,7 +7,7 @@ from common import *
 STRINGS = path[0] + '/strings.json'
 TABLES = path[0] + '/tables.json'
 
-headers, messages, menu_str, help_str, training_params, user_params, BNUMS, food_params = get_from_json(STRINGS, 'dicts', 'headers', 'messages', 'menu_str', 'help_str', 'training_params', 'user_params', 'BNUMS', 'food_params')
+headers, messages, menu_str, help_str, training_params, user_params, BNUMS, food_params, new_food_params = get_from_json(STRINGS, 'dicts', 'headers', 'messages', 'menu_str', 'help_str', 'training_params', 'user_params', 'BNUMS', 'food_params', 'new_food_params')
 tables = get_from_json(TABLES, 'dicts', 'tables')[0]
 speeds = get_from_json(STRINGS, 'lists',  'speeds')[0]
 
@@ -28,13 +28,13 @@ def incr_or_av(some_dict, key):
         some_dict[key] = 0
 
 
-SQLS = {
-    'training_params':
-        'SELECT rowid, * FROM trainings WHERE rowid = ?',
-    'training_list':
-        'WITH tmp AS (SELECT exer_id, duration FROM exercises_lists WHERE training_id = ?) SELECT e.title, tmp.duration FROM tmp INNER JOIN exercises AS e WHERE tmp.exer_id = e.rowid',
+#  SQLS = {
+    #  'training_params':
+        #  'SELECT rowid, * FROM trainings WHERE rowid = ?',
+    #  'training_list':
+        #  'WITH tmp AS (SELECT exer_id, duration FROM exercises_lists WHERE training_id = ?) SELECT e.title, tmp.duration FROM tmp INNER JOIN exercises AS e WHERE tmp.exer_id = e.rowid',
 
-}
+#  }
 
 
     

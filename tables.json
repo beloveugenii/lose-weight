@@ -7,7 +7,7 @@
         "diary", "(user INT, date TEXT, title TEXT, value REAL)"
         ],
         [
-        "users", "(name TEXT, sex TEXT, age INT, height REAL, weight REAL, activity REAL)"
+        "users", "(name TEXT, sex TEXT, birthdate TEXT, height REAL, weight REAL, activity REAL)"
         ],
         [
         "current_user", "(user_id INT)"

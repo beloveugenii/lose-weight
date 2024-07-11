@@ -9,7 +9,7 @@ from foods import *
 import completer as c
 import argparse
 
-VERSION = '0.1.8-0'
+VERSION = '0.1.8-1'
 DB_NAME = sys.path[0] + '/data.db'
 
 parser = argparse.ArgumentParser(
@@ -77,9 +77,13 @@ while True:
 
     # Вывод экрана
     action = screen(
-        user_data['name'] + ': ' + headers[screen_name] + ' ' + current_date.strftime('%Y-%m-%d'),
+        user_data['name'] + ': ' + headers[screen_name] + ' ' + current_date.strftime('%Y-%m-%d') + f' v{VERSION}',
         lambda:
-        print_as_table( [('норма калорий'.upper(), '', kcal_norm)] + diary + [('всего'.upper(), '', kcal_per_day)],  ' ' ) if diary else print(messages['ndip']),
+        print_as_table(
+            [('норма калорий'.upper(), '', kcal_norm)] + 
+            [('всего'.upper(), '', kcal_per_day)] + 
+            diary 
+            ) if diary else print(messages['ndip']),
         menu_str[screen_name], 2)
 
    
@@ -158,13 +162,14 @@ while True:
             new_entry['value'] = data[1] if data[1] is not None else input(f"количество для '{new_entry['title'][:1].upper() + new_entry['title'][1:]}': ")
 
             if is_in_db(cur, new_entry['title']) is None:
-                print(f'Похоже, что такого блюда как \'{new_entry["title"]}\' нет в базе\nТребуется ввод дополнительной инофрмации')
+                helps(
+                        messages['nd'] + 
+                        f' о {new_entry["title"]}\n' + 
+                        messages['new_food'], 0.01
+                    )
 
                 # Добавляем новый продукт в БД
-                d = get_data({'kcal': 'калорийность',
-                          'p': 'содержание белков',
-                          'f': 'содержание жиров',
-                          'c': 'содержание углеводов'}, 1)
+                d = get_new_food_data(new_food_params)
 
                 d['title'] = new_entry['title']
                 add_new_food(cur, d)
